@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Swift Express Delivery Company — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+:root{
+  --ink-dark:#0A1F3D;
+  --ink-mid:#0D2B52;
+  --ink:#1A3F72;
+  --sky-accent:#0EA5E9;
+  --sky-light:#E0F2FE;
+  --white:#FFFFFF;
+  --off-white:#F0F7FF;
+  --slate:#4A6080;
+  --text:#0D1F36;
+  --border:#B0CFEA;
+  --red:#B23A3A;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--off-white);color:var(--text);line-height:1.5;}
+h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif;}
+.mono{font-family:'JetBrains Mono',monospace;}
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(160deg,var(--ink-dark) 0%,var(--ink-mid) 55%,#0B3060 100%);padding:24px;}
+.login-card{background:#fff;border-radius:14px;padding:40px;max-width:420px;width:100%;
+  box-shadow:0 20px 60px rgba(0,0,0,0.35);}
+.login-card .mark{width:52px;height:52px;border-radius:12px;
+  background:linear-gradient(135deg,var(--sky-accent),var(--ink));
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-weight:700;font-size:1.1rem;margin-bottom:18px;
+  font-family:'Space Grotesk',sans-serif;letter-spacing:-0.03em;}
+.login-card h1{font-size:1.5rem;margin-bottom:4px;color:var(--ink-dark);}
+.login-card .sub{color:var(--slate);font-size:0.88rem;margin-bottom:28px;}
+.field{margin-bottom:18px;}
+.field label{display:block;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.1em;
+  color:var(--slate);font-weight:600;margin-bottom:8px;}
+.field input{width:100%;padding:13px 14px;border-radius:8px;border:1.5px solid var(--border);
+  font-size:0.95rem;background:#fff;color:var(--text);}
+.field input:focus{outline:none;border-color:var(--sky-accent);box-shadow:0 0 0 3px rgba(14,165,233,0.14);}
+.btn{border:none;border-radius:8px;padding:13px 22px;
+  font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:0.95rem;cursor:pointer;transition:transform .15s,box-shadow .15s;}
+.btn-primary{background:var(--ink);color:#fff;}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(26,63,114,0.4);background:var(--sky-accent);}
+.btn-secondary{background:var(--ink-dark);color:#fff;}
+.btn-secondary:hover{background:var(--ink-mid);}
+.btn-danger{background:#fff;color:var(--red);border:1.5px solid #E8C7C7;}
+.btn-danger:hover{background:#FCEDED;}
+.btn-green{background:var(--sky-accent);color:#fff;}
+.btn-green:hover{background:var(--ink);}
+.login-error{margin-top:14px;font-size:0.85rem;color:var(--red);font-weight:500;display:none;}
+.shell{display:none;min-height:100vh;}
+header{background:linear-gradient(90deg,var(--ink-dark) 0%,var(--ink-mid) 100%);color:#fff;padding:16px 28px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid rgba(255,255,255,0.10);}
+.logo{display:flex;align-items:center;gap:12px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.15rem;color:#fff;}
+.logo .mark{width:36px;height:36px;border-radius:9px;
+  background:linear-gradient(135deg,var(--sky-accent),var(--ink));
+  display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:0.85rem;
+  letter-spacing:-0.03em;border:2px solid rgba(255,255,255,0.25);}
+.header-right{display:flex;align-items:center;gap:10px;font-size:0.85rem;flex-wrap:wrap;}
+.header-right .who{color:rgba(255,255,255,0.75);}
+.tabs{display:flex;gap:0;background:var(--ink-mid);padding:0 28px;border-bottom:2px solid rgba(255,255,255,0.08);}
+.tab-btn{padding:14px 20px;background:none;border:none;color:rgba(255,255,255,0.55);
+  font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:0.9rem;cursor:pointer;
+  border-bottom:3px solid transparent;transition:color .2s,border-color .2s;}
+.tab-btn.active{color:#fff;border-bottom-color:var(--sky-accent);}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+main{max-width:1300px;margin:0 auto;padding:28px 20px;}
+.grid{display:grid;grid-template-columns:1.1fr 1.4fr;gap:24px;}
+@media(max-width:980px){.grid{grid-template-columns:1fr;}}
+.panel{background:#fff;border-radius:14px;padding:28px;border:1px solid var(--border);margin-bottom:24px;}
+.panel h2{font-size:1.15rem;margin-bottom:4px;color:var(--ink-dark);}
+.panel .sub{color:var(--slate);font-size:0.85rem;margin-bottom:22px;}
+.section-title{font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em;
+  color:var(--sky-accent);font-weight:700;margin:20px 0 12px;padding-bottom:6px;
+  border-bottom:2px solid var(--sky-light);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+@media(max-width:560px){.form-row{grid-template-columns:1fr;}}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;}
+@media(max-width:700px){.form-row-3{grid-template-columns:1fr 1fr;}}
+@media(max-width:480px){.form-row-3{grid-template-columns:1fr;}}
+.field-inline label{display:block;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.1em;
+  color:var(--slate);font-weight:600;margin-bottom:8px;}
+.field-inline input,.field-inline select,.field-inline textarea{
+  width:100%;padding:12px 14px;border-radius:8px;border:1.5px solid var(--border);
+  font-size:0.92rem;background:#fff;color:var(--text);font-family:inherit;}
+.field-inline textarea{resize:vertical;min-height:80px;}
+.field-inline input:focus,.field-inline select:focus,.field-inline textarea:focus{
+  outline:none;border-color:var(--sky-accent);box-shadow:0 0 0 3px rgba(14,165,233,0.12);}
+.new-id-banner{margin-top:18px;padding:16px;background:var(--sky-light);border-radius:10px;
+  border:1.5px dashed var(--sky-accent);display:none;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.new-id-banner.show{display:flex;}
+.new-id-banner .id{font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:600;color:var(--ink-dark);}
+.new-id-banner .label{font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--slate);margin-bottom:4px;}
+.copy-btn{background:var(--ink);color:#fff;border:none;border-radius:6px;padding:8px 14px;
+  font-size:0.8rem;font-weight:600;cursor:pointer;font-family:'Space Grotesk',sans-serif;}
+.copy-btn:hover{background:var(--sky-accent);}
+.ship-list{display:flex;flex-direction:column;gap:10px;}
+.ship-card{border:1px solid var(--border);border-radius:10px;padding:16px;cursor:pointer;transition:border-color .15s,background .15s;}
+.ship-card:hover{border-color:var(--ink);background:var(--sky-light);}
+.ship-card.active{border-color:var(--sky-accent);background:var(--sky-light);}
+.ship-card .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.ship-card .id{font-family:'JetBrains Mono',monospace;font-weight:600;font-size:0.92rem;color:var(--ink-dark);}
+.ship-card .route{font-size:0.85rem;color:var(--slate);}
+.status-badge{display:inline-block;padding:4px 11px;border-radius:99px;
+  font-size:0.7rem;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;}
+.status-badge.delivered{background:rgba(14,165,233,0.15);color:var(--ink-mid);}
+.status-badge.transit{background:rgba(14,165,233,0.12);color:var(--sky-accent);}
+.status-badge.pending{background:rgba(74,96,128,0.12);color:var(--slate);}
+.status-badge.customs{background:rgba(180,140,30,0.15);color:#7a5c10;}
+.empty-state{text-align:center;padding:48px 20px;color:var(--slate);}
+.empty-state .icon{font-size:2.4rem;margin-bottom:12px;}
+.detail-row{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--sky-light);font-size:0.9rem;}
+.detail-row:last-child{border-bottom:none;}
+.detail-row .k{color:var(--slate);}
+.detail-row .v{font-weight:600;text-align:right;max-width:60%;color:var(--ink-dark);}
+.history-item{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--sky-light);font-size:0.88rem;}
+.history-item:last-child{border-bottom:none;}
+.history-dot{width:9px;height:9px;border-radius:50%;background:var(--ink);margin-top:5px;flex-shrink:0;}
+.history-item:first-child .history-dot{background:var(--sky-accent);}
+.history-content .loc{font-weight:600;color:var(--ink-dark);}
+.history-content .time{font-size:0.78rem;color:var(--slate);margin-top:2px;}
+.actions-row{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;}
+.placeholder-note{color:var(--slate);font-size:0.9rem;text-align:center;padding:30px 0;}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--ink-dark);color:#fff;
+  padding:14px 20px;border-radius:10px;font-size:0.88rem;font-weight:500;
+  box-shadow:0 8px 24px rgba(0,0,0,0.25);z-index:9999;
+  transform:translateY(80px);opacity:0;transition:all 0.3s ease;pointer-events:none;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.success{border-left:4px solid var(--sky-accent);}
+.toast.error{border-left:4px solid var(--red);}
+.toast.info{border-left:4px solid var(--ink);}
+.pwd-section{max-width:480px;}
+.pwd-status{font-size:0.85rem;margin-top:10px;font-weight:500;display:none;}
+.pwd-status.ok{color:var(--ink);}
+.pwd-status.err{color:var(--red);}
+.search-bar{width:100%;padding:11px 14px;border-radius:8px;border:1.5px solid var(--border);
+  font-size:0.92rem;margin-bottom:16px;font-family:inherit;background:#fff;color:var(--text);}
+.search-bar:focus{outline:none;border-color:var(--sky-accent);}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+@media(max-width:700px){.stats-row{grid-template-columns:1fr 1fr;}}
+.stat-card{background:#fff;border-radius:12px;padding:20px;border:1px solid var(--border);text-align:center;
+  border-top:3px solid var(--sky-accent);}
+.stat-card .val{font-family:'Space Grotesk',sans-serif;font-size:2rem;font-weight:700;color:var(--ink);}
+.stat-card .lbl{font-size:0.78rem;color:var(--slate);text-transform:uppercase;letter-spacing:0.06em;margin-top:4px;}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);
+  border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="loginScreen">
+  <div class="login-card">
+    <div class="mark">SE</div>
+    <h1>Swift Express Delivery Company</h1>
+    <div class="sub">Admin Portal — Secure Access</div>
+    <div class="field">
+      <label for="username">Username</label>
+      <input type="text" id="username" autocomplete="username" placeholder="admin">
+    </div>
+    <div class="field">
+      <label for="password">Password</label>
+      <input type="password" id="password" autocomplete="current-password">
+    </div>
+    <button class="btn btn-primary" style="width:100%;" onclick="login()">Log in</button>
+    <div class="login-error" id="loginError">Incorrect username or password.</div>
+  </div>
+</div>
+
+<!-- ADMIN SHELL -->
+<div class="shell" id="adminShell">
+  <header>
+    <div class="logo"><span class="mark">SE</span> Swift Express Delivery Company — Admin</div>
+    <div class="header-right">
+      <span class="who">Signed in as <strong id="currentUser">admin</strong></span>
+      <button class="btn btn-secondary" style="padding:9px 16px;font-size:0.85rem;" onclick="logout()">Log out</button>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('shipments',event)">📦 Shipments</button>
+    <button class="tab-btn" onclick="switchTab('create',event)">➕ New Shipment</button>
+    <button class="tab-btn" onclick="switchTab('settings',event)">⚙️ Settings</button>
+  </div>
+
+  <main>
+    <div class="stats-row">
+      <div class="stat-card"><div class="val" id="statTotal">0</div><div class="lbl">Total Shipments</div></div>
+      <div class="stat-card"><div class="val" id="statTransit">0</div><div class="lbl">In Transit</div></div>
+      <div class="stat-card"><div class="val" id="statDelivered">0</div><div class="lbl">Delivered</div></div>
+      <div class="stat-card"><div class="val" id="statPending">0</div><div class="lbl">Pending</div></div>
+    </div>
+
+    <!-- TAB: SHIPMENTS -->
+    <div class="tab-content active" id="tab-shipments">
+      <div class="grid">
+        <div class="panel" style="margin-bottom:0;">
+          <h2>All Shipments</h2>
+          <div class="sub">Select a shipment to view details or update location.</div>
+          <input class="search-bar" type="text" placeholder="🔍 Search by ID, name, or destination…" oninput="filterShipments(this.value)">
+          <div class="ship-list" id="shipList"></div>
+          <div class="empty-state" id="shipEmpty" style="display:none;">
+            <div class="icon">📦</div>
+            <div>No shipments yet. Create one in the New Shipment tab.</div>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-bottom:0;">
+          <div id="detailEmpty" class="placeholder-note">Select a shipment from the list to view details and update tracking.</div>
+          <div id="detailContent" style="display:none;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+              <div>
+                <h2 id="d_id" style="font-family:'JetBrains Mono',monospace;color:var(--ink-dark);"></h2>
+                <div class="sub" id="d_beneficiary" style="margin-bottom:0;"></div>
+              </div>
+              <span class="status-badge" id="d_statusBadge"></span>
+            </div>
+
+            <div class="section-title">📤 Sender Information</div>
+            <div class="detail-row"><span class="k">Name</span><span class="v" id="d_senderName">—</span></div>
+            <div class="detail-row"><span class="k">Phone</span><span class="v" id="d_senderPhone">—</span></div>
+            <div class="detail-row"><span class="k">Email</span><span class="v" id="d_senderEmail">—</span></div>
+            <div class="detail-row"><span class="k">Location</span><span class="v" id="d_origin">—</span></div>
+
+            <div class="section-title">📥 Receiver Information</div>
+            <div class="detail-row"><span class="k">Name</span><span class="v" id="d_receiverName">—</span></div>
+            <div class="detail-row"><span class="k">Phone</span><span class="v" id="d_receiverPhone">—</span></div>
+            <div class="detail-row"><span class="k">Email</span><span class="v" id="d_receiverEmail">—</span></div>
+            <div class="detail-row"><span class="k">Location</span><span class="v" id="d_destination">—</span></div>
+
+            <div class="section-title">📦 Shipment Details</div>
+            <div class="detail-row"><span class="k">Goods</span><span class="v" id="d_goods">—</span></div>
+            <div class="detail-row"><span class="k">Weight</span><span class="v" id="d_weight">—</span></div>
+            <div class="detail-row"><span class="k">Item Type</span><span class="v" id="d_itemType">—</span></div>
+            <div class="detail-row"><span class="k">Quantity</span><span class="v" id="d_quantity">—</span></div>
+            <div class="detail-row"><span class="k">Date Shipped</span><span class="v" id="d_dateShipped">—</span></div>
+            <div class="detail-row"><span class="k">Expected Delivery</span><span class="v" id="d_eta">—</span></div>
+            <div class="detail-row"><span class="k">Status</span><span class="v" id="d_status">—</span></div>
+            <div class="detail-row"><span class="k">Special Notes</span><span class="v" id="d_notes">—</span></div>
+
+            <div class="section-title">🔄 Update Tracking</div>
+            <div class="form-row">
+              <div class="field-inline">
+                <label>New Location</label>
+                <input type="text" id="u_location" placeholder="e.g. Cairo Sorting Hub, Egypt">
+              </div>
+              <div class="field-inline">
+                <label>Status</label>
+                <select id="u_status">
+                  <option value="Pending">Pending</option>
+                  <option value="In Transit">In Transit</option>
+                  <option value="At Customs">At Customs</option>
+                  <option value="Out for Delivery">Out for Delivery</option>
+                  <option value="Delivered">Delivered</option>
+                </select>
+              </div>
+            </div>
+            <div class="actions-row">
+              <button class="btn btn-primary" onclick="addLocationUpdate()">Add Update</button>
+              <button class="btn btn-green" onclick="downloadInvoice()">⬇ Download Invoice</button>
+              <button class="btn btn-danger" onclick="deleteShipment()">🗑 Delete</button>
+            </div>
+
+            <div style="margin-top:24px;">
+              <div class="section-title">📋 Tracking History</div>
+              <div id="d_history"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: CREATE -->
+    <div class="tab-content" id="tab-create">
+      <div class="panel">
+        <h2>Create New Shipment</h2>
+        <div class="sub">Fill in all details. A tracking ID will be auto-generated and an email sent to the receiver.</div>
+
+        <div class="section-title">📤 Sender Information</div>
+        <div class="form-row">
+          <div class="field-inline"><label>Sender Full Name *</label><input type="text" id="f_senderName" placeholder="e.g. John Adeyemi"></div>
+          <div class="field-inline"><label>Sender Phone *</label><input type="tel" id="f_senderPhone" placeholder="+234 800 000 0000"></div>
+        </div>
+        <div class="form-row">
+          <div class="field-inline"><label>Sender Email *</label><input type="email" id="f_senderEmail" placeholder="sender@email.com"></div>
+          <div class="field-inline"><label>Sender Location / Address *</label><input type="text" id="f_origin" placeholder="e.g. Lagos, Nigeria"></div>
+        </div>
+
+        <div class="section-title">📥 Receiver Information</div>
+        <div class="form-row">
+          <div class="field-inline"><label>Receiver Full Name *</label><input type="text" id="f_receiverName" placeholder="e.g. James Smith"></div>
+          <div class="field-inline"><label>Receiver Phone *</label><input type="tel" id="f_receiverPhone" placeholder="+44 7700 000000"></div>
+        </div>
+        <div class="form-row">
+          <div class="field-inline"><label>Receiver Email *</label><input type="email" id="f_receiverEmail" placeholder="receiver@email.com"></div>
+          <div class="field-inline"><label>Receiver Location / Address *</label><input type="text" id="f_destination" placeholder="e.g. London, UK"></div>
+        </div>
+
+        <div class="section-title">📦 Goods & Shipment Information</div>
+        <div class="form-row">
+          <div class="field-inline"><label>Goods Description *</label><input type="text" id="f_goods" placeholder="e.g. Electronic devices, clothing…"></div>
+          <div class="field-inline"><label>Item Type *</label>
+            <select id="f_itemType">
+              <option value="">— Select type —</option>
+              <option>Documents</option>
+              <option>Electronics</option>
+              <option>Clothing & Apparel</option>
+              <option>Pharmaceuticals</option>
+              <option>Perishables / Food</option>
+              <option>Furniture</option>
+              <option>Automotive Parts</option>
+              <option>Jewelry & High-Value</option>
+              <option>Industrial Equipment</option>
+              <option>Art & Antiques</option>
+              <option>General Cargo</option>
+              <option>Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row-3">
+          <div class="field-inline"><label>Weight (kg) *</label><input type="text" id="f_weight" placeholder="e.g. 3.2 kg"></div>
+          <div class="field-inline"><label>Quantity</label><input type="text" id="f_quantity" placeholder="e.g. 2 boxes"></div>
+          <div class="field-inline"><label>Declared Value (USD)</label><input type="text" id="f_value" placeholder="e.g. $500"></div>
+        </div>
+        <div class="form-row">
+          <div class="field-inline"><label>Date Shipped *</label><input type="date" id="f_dateShipped"></div>
+          <div class="field-inline"><label>Expected Delivery Date *</label><input type="date" id="f_eta"></div>
+        </div>
+        <div class="form-row">
+          <div class="field-inline"><label>Initial Status</label>
+            <select id="f_status">
+              <option value="Pending">Pending</option>
+              <option value="In Transit" selected>In Transit</option>
+            </select>
+          </div>
+          <div class="field-inline"><label>Service Type</label>
+            <select id="f_service">
+              <option>International Air Express</option>
+              <option>Ocean Freight</option>
+              <option>Rail Freight</option>
+              <option>Road Freight</option>
+              <option>Same-Day Express</option>
+              <option>White Glove Service</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-inline" style="margin-bottom:20px;">
+          <label>Special Notes / Instructions</label>
+          <textarea id="f_notes" placeholder="e.g. Fragile — handle with care. Keep refrigerated."></textarea>
+        </div>
+
+        <button class="btn btn-primary" style="width:auto;padding:14px 28px;" id="createBtn" onclick="createShipment()">
+          Generate Tracking ID & Create Shipment
+        </button>
+
+        <div class="new-id-banner" id="newIdBanner">
+          <div>
+            <div class="label">New Tracking ID Generated</div>
+            <div class="id" id="newIdValue">—</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="copy-btn" onclick="copyNewId()">Copy ID</button>
+            <button class="copy-btn" style="background:var(--sky-accent);" onclick="downloadLastInvoice()">⬇ Invoice</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: SETTINGS -->
+    <div class="tab-content" id="tab-settings">
+      <div class="panel pwd-section" style="max-width:500px;">
+        <h2>Change Password</h2>
+        <div class="sub">Update your admin login password.</div>
+        <div class="field-inline" style="margin-bottom:14px;">
+          <label>Current Password</label>
+          <input type="password" id="pwd_current" placeholder="Enter current password">
+        </div>
+        <div class="field-inline" style="margin-bottom:14px;">
+          <label>New Password</label>
+          <input type="password" id="pwd_new" placeholder="At least 6 characters">
+        </div>
+        <div class="field-inline" style="margin-bottom:18px;">
+          <label>Confirm New Password</label>
+          <input type="password" id="pwd_confirm" placeholder="Repeat new password">
+        </div>
+        <button class="btn btn-primary" onclick="changePassword()">Update Password</button>
+        <div class="pwd-status ok" id="pwdOk">✅ Password updated successfully.</div>
+        <div class="pwd-status err" id="pwdErr"></div>
+      </div>
+
+      <div class="panel" style="max-width:500px;">
+        <h2>Admin Credentials</h2>
+        <div class="sub">Current login information (read-only display).</div>
+        <div class="detail-row"><span class="k">Username</span><span class="v" id="settingsUser">admin</span></div>
+        <div class="detail-row"><span class="k">Password</span><span class="v">••••••••</span></div>
+        <div class="detail-row"><span class="k">Session</span><span class="v" style="color:var(--sky-accent);">Active ✓</span></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// CONFIG — CREDENTIALS
+// ═══════════════════════════════════════════════════
+const JSONBIN_BIN_ID   = '6a3fd6fcda38895dfe078dc7';
+const JSONBIN_API_KEY  = '$2a$10$PwnR0G10b45nSZx9ntoBOenxK//HWPqHxJJlHpejPP9pBpvVb/KKi';
+const JSONBIN_BASE     = 'https://api.jsonbin.io/v3/b/' + JSONBIN_BIN_ID;
+
+const EJS_PUBLIC_KEY   = 'k-QbN1cUxicfDOSsO';
+const EJS_SERVICE_ID   = 'service_ts6s0gr';
+const EJS_TEMPLATE_ID  = 'template_qbk653l';
+
+const SESSION_KEY = 'gd_admin_session';
+const CREDS_KEY   = 'gd_admin_creds';
+
+emailjs.init({ publicKey: EJS_PUBLIC_KEY });
+
+function getCreds() {
+  try { return JSON.parse(localStorage.getItem(CREDS_KEY)) || { user:'admin', pass:'admin3030' }; }
+  catch(e) { return { user:'admin', pass:'admin3030' }; }
+}
+function saveCreds(c) { localStorage.setItem(CREDS_KEY, JSON.stringify(c)); }
+
+function login() {
+  const u = document.getElementById('username').value.trim();
+  const p = document.getElementById('password').value;
+  const creds = getCreds();
+  if (u === creds.user && p === creds.pass) {
+    sessionStorage.setItem(SESSION_KEY, '1');
+    document.getElementById('loginError').style.display = 'none';
+    showAdmin();
+  } else {
+    document.getElementById('loginError').style.display = 'block';
+  }
+}
+function logout() {
+  sessionStorage.removeItem(SESSION_KEY);
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('adminShell').style.display = 'none';
+  document.getElementById('password').value = '';
+}
+function showAdmin() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('adminShell').style.display = 'block';
+  document.getElementById('currentUser').textContent = getCreds().user;
+  document.getElementById('settingsUser').textContent = getCreds().user;
+  loadShipments();
+}
+document.getElementById('password').addEventListener('keydown', e => { if(e.key==='Enter') login(); });
+if (sessionStorage.getItem(SESSION_KEY) === '1') showAdmin();
+
+function changePassword() {
+  const cur  = document.getElementById('pwd_current').value;
+  const nw   = document.getElementById('pwd_new').value;
+  const conf = document.getElementById('pwd_confirm').value;
+  const ok   = document.getElementById('pwdOk');
+  const err  = document.getElementById('pwdErr');
+  ok.style.display = 'none'; err.style.display = 'none';
+  const creds = getCreds();
+  if (cur !== creds.pass) { err.textContent = '❌ Current password is incorrect.'; err.style.display = 'block'; return; }
+  if (nw.length < 6)      { err.textContent = '❌ New password must be at least 6 characters.'; err.style.display = 'block'; return; }
+  if (nw !== conf)         { err.textContent = '❌ Passwords do not match.'; err.style.display = 'block'; return; }
+  saveCreds({ user: creds.user, pass: nw });
+  document.getElementById('pwd_current').value = '';
+  document.getElementById('pwd_new').value = '';
+  document.getElementById('pwd_confirm').value = '';
+  ok.style.display = 'block';
+  showToast('Password updated successfully!', 'success');
+}
+
+function switchTab(name, e) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (e && e.currentTarget) e.currentTarget.classList.add('active');
+}
+
+function showToast(msg, type='info') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + type + ' show';
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+async function fetchBin() {
+  const r = await fetch(JSONBIN_BASE + '/latest', {
+    headers: { 'X-Master-Key': JSONBIN_API_KEY }
+  });
+  const d = await r.json();
+  return d.record || { shipments: {} };
+}
+async function saveBin(data) {
+  await fetch(JSONBIN_BASE, {
+    method: 'PUT',
+    headers: { 'Content-Type':'application/json', 'X-Master-Key': JSONBIN_API_KEY },
+    body: JSON.stringify(data)
+  });
+}
+
+let allShipments = {};
+let selectedId   = null;
+let lastCreated  = null;
+
+async function loadShipments() {
+  showToast('Loading shipments…', 'info');
+  try {
+    const data = await fetchBin();
+    allShipments = data.shipments || {};
+    renderList();
+    updateStats();
+    showToast('Shipments loaded ✓', 'success');
+  } catch(e) {
+    showToast('Failed to load shipments. Check connection.', 'error');
+  }
+}
+
+function generateTrackingId() {
+  const year = new Date().getFullYear();
+  let id = `SWEX-${year}-${Math.floor(10000 + Math.random() * 90000)}`;
+  while (allShipments[id]) {
+    id = `SWEX-${year}-${Math.floor(10000 + Math.random() * 90000)}`;
+  }
+  return id;
+}
+
+async function createShipment() {
+  const get = id => document.getElementById(id).value.trim();
+  const required = [
+    ['f_senderName','Sender Name'],['f_senderPhone','Sender Phone'],
+    ['f_senderEmail','Sender Email'],['f_origin','Sender Location'],
+    ['f_receiverName','Receiver Name'],['f_receiverPhone','Receiver Phone'],
+    ['f_receiverEmail','Receiver Email'],['f_destination','Receiver Location'],
+    ['f_goods','Goods Description'],['f_weight','Weight'],
+    ['f_dateShipped','Date Shipped'],['f_eta','Expected Delivery Date'],
+  ];
+  for (const [id, label] of required) {
+    if (!get(id)) { showToast(`Please fill in: ${label}`, 'error'); return; }
+  }
+  const btn = document.getElementById('createBtn');
+  btn.innerHTML = '<span class="spinner"></span> Creating…';
+  btn.disabled = true;
+
+  const id = generateTrackingId();
+  const shipment = {
+    id,
+    senderName   : get('f_senderName'),
+    senderPhone  : get('f_senderPhone'),
+    senderEmail  : get('f_senderEmail'),
+    origin       : get('f_origin'),
+    receiverName : get('f_receiverName'),
+    receiverPhone: get('f_receiverPhone'),
+    receiverEmail: get('f_receiverEmail'),
+    destination  : get('f_destination'),
+    goods        : get('f_goods'),
+    itemType     : get('f_itemType'),
+    weight       : get('f_weight'),
+    quantity     : get('f_quantity') || '1',
+    declaredValue: get('f_value') || 'N/A',
+    dateShipped  : get('f_dateShipped'),
+    eta          : get('f_eta'),
+    status       : document.getElementById('f_status').value,
+    service      : document.getElementById('f_service').value,
+    notes        : get('f_notes') || 'None',
+    created      : new Date().toISOString(),
+    history      : []
+  };
+
+  allShipments[id] = shipment;
+  lastCreated = shipment;
+
+  try {
+    await saveBin({ shipments: allShipments });
+    document.getElementById('newIdValue').textContent = id;
+    document.getElementById('newIdBanner').classList.add('show');
+    resetCreateForm();
+    renderList();
+    updateStats();
+    showToast('Shipment created: ' + id, 'success');
+    sendEmailNotification(shipment);
+  } catch(e) {
+    showToast('Error saving shipment. Please try again.', 'error');
+  }
+  btn.innerHTML = 'Generate Tracking ID & Create Shipment';
+  btn.disabled = false;
+}
+
+function resetCreateForm() {
+  ['f_senderName','f_senderPhone','f_senderEmail','f_origin',
+   'f_receiverName','f_receiverPhone','f_receiverEmail','f_destination',
+   'f_goods','f_weight','f_quantity','f_value','f_dateShipped','f_eta','f_notes']
+    .forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f_itemType').value = '';
+  document.getElementById('f_status').value = 'In Transit';
+  document.getElementById('f_service').value = 'International Air Express';
+}
+
+function copyNewId() {
+  navigator.clipboard.writeText(document.getElementById('newIdValue').textContent)
+    .then(() => showToast('Tracking ID copied!', 'success'));
+}
+
+function sendEmailNotification(s) {
+  emailjs.send(EJS_SERVICE_ID, EJS_TEMPLATE_ID, {
+    to_name      : s.receiverName,
+    to_email     : s.receiverEmail,
+    tracking_id  : s.id,
+    sender_name  : s.senderName,
+    sender_phone : s.senderPhone,
+    sender_email : s.senderEmail,
+    origin       : s.origin,
+    destination  : s.destination,
+    goods        : s.goods,
+    weight       : s.weight,
+    date_shipped : fmtDateOnly(s.dateShipped),
+    eta          : fmtDateOnly(s.eta),
+    status       : s.status,
+    receiver_phone: s.receiverPhone,
+    service      : s.service,
+  })
+  .then(() => showToast('📧 Email notification sent to receiver!', 'success'))
+  .catch(() => showToast('Email sending failed — check EmailJS setup.', 'error'));
+}
+
+function updateStats() {
+  const all = Object.values(allShipments);
+  document.getElementById('statTotal').textContent     = all.length;
+  document.getElementById('statTransit').textContent   = all.filter(s => s.status === 'In Transit' || s.status === 'Out for Delivery').length;
+  document.getElementById('statDelivered').textContent = all.filter(s => s.status === 'Delivered').length;
+  document.getElementById('statPending').textContent   = all.filter(s => s.status === 'Pending' || s.status === 'At Customs').length;
+}
+
+function renderList(filter='') {
+  const list = Object.values(allShipments)
+    .filter(s => !filter || JSON.stringify(s).toLowerCase().includes(filter.toLowerCase()))
+    .sort((a,b) => new Date(b.created) - new Date(a.created));
+  const container = document.getElementById('shipList');
+  const empty     = document.getElementById('shipEmpty');
+  container.innerHTML = '';
+  if (list.length === 0) { empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  list.forEach(s => {
+    const div = document.createElement('div');
+    div.className = 'ship-card' + (s.id === selectedId ? ' active' : '');
+    div.onclick = () => selectShipment(s.id);
+    div.innerHTML = `
+      <div class="top">
+        <span class="id">${esc(s.id)}</span>
+        <span class="status-badge ${statusClass(s.status)}">${esc(s.status)}</span>
+      </div>
+      <div class="route">${esc(s.origin)} → ${esc(s.destination)}</div>
+      <div class="route" style="margin-top:3px;">📦 ${esc(s.goods)} · 👤 ${esc(s.receiverName)}</div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function filterShipments(q) { renderList(q); }
+
+function selectShipment(id) {
+  selectedId = id;
+  renderList(document.querySelector('.search-bar').value);
+  renderDetail();
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', i===0));
+  document.querySelectorAll('.tab-content').forEach((c,i) => c.classList.toggle('active', i===0));
+}
+
+function renderDetail() {
+  const s = allShipments[selectedId];
+  const empty   = document.getElementById('detailEmpty');
+  const content = document.getElementById('detailContent');
+  if (!s) { empty.style.display = 'block'; content.style.display = 'none'; selectedId = null; return; }
+  empty.style.display = 'none';
+  content.style.display = 'block';
+
+  setText('d_id', s.id);
+  setText('d_beneficiary', 'For ' + s.receiverName + ' · ' + s.receiverEmail);
+  const badge = document.getElementById('d_statusBadge');
+  badge.textContent = s.status;
+  badge.className = 'status-badge ' + statusClass(s.status);
+
+  setText('d_senderName',   s.senderName);
+  setText('d_senderPhone',  s.senderPhone);
+  setText('d_senderEmail',  s.senderEmail);
+  setText('d_origin',       s.origin);
+  setText('d_receiverName', s.receiverName);
+  setText('d_receiverPhone',s.receiverPhone);
+  setText('d_receiverEmail',s.receiverEmail);
+  setText('d_destination',  s.destination);
+  setText('d_goods',        s.goods);
+  setText('d_weight',       s.weight);
+  setText('d_itemType',     s.itemType || '—');
+  setText('d_quantity',     s.quantity || '—');
+  setText('d_dateShipped',  fmtDateOnly(s.dateShipped));
+  setText('d_eta',          fmtDateOnly(s.eta));
+  setText('d_status',       s.status);
+  setText('d_notes',        s.notes || '—');
+
+  document.getElementById('u_location').value = '';
+  document.getElementById('u_status').value   = s.status;
+
+  const histEl = document.getElementById('d_history');
+  histEl.innerHTML = '';
+  const items = (s.history || []).slice().reverse();
+  if (items.length === 0) {
+    histEl.innerHTML = `<div class="history-item"><div class="history-dot"></div><div class="history-content"><div class="loc">Shipment created — ${esc(s.origin)}</div><div class="time">${fmtDate(s.created)}</div></div></div>`;
+  } else {
+    items.forEach(h => {
+      const div = document.createElement('div');
+      div.className = 'history-item';
+      div.innerHTML = `<div class="history-dot"></div><div class="history-content"><div class="loc">${esc(h.location)} <span style="color:var(--sky-accent);font-size:0.78rem;">[${esc(h.status||'')}]</span></div><div class="time">${fmtDate(h.time)}</div></div>`;
+      histEl.appendChild(div);
+    });
+  }
+}
+
+async function addLocationUpdate() {
+  if (!selectedId) return;
+  const location = document.getElementById('u_location').value.trim();
+  const status   = document.getElementById('u_status').value;
+  const s = allShipments[selectedId];
+  if (!s) return;
+  if (location) {
+    s.history = s.history || [];
+    s.history.push({ location, status, time: new Date().toISOString() });
+  }
+  s.status = status;
+  try {
+    await saveBin({ shipments: allShipments });
+    renderList(document.querySelector('.search-bar').value);
+    renderDetail();
+    updateStats();
+    showToast('Tracking updated ✓', 'success');
+  } catch(e) {
+    showToast('Error saving update.', 'error');
+  }
+}
+
+async function deleteShipment() {
+  if (!selectedId) return;
+  if (!confirm('Delete shipment ' + selectedId + '? This cannot be undone.')) return;
+  delete allShipments[selectedId];
+  try {
+    await saveBin({ shipments: allShipments });
+    selectedId = null;
+    renderList();
+    renderDetail();
+    updateStats();
+    showToast('Shipment deleted.', 'info');
+  } catch(e) {
+    showToast('Error deleting shipment.', 'error');
+  }
+}
+
+function downloadLastInvoice() {
+  if (lastCreated) generateInvoice(lastCreated);
+  else showToast('No shipment to generate invoice for.', 'error');
+}
+function downloadInvoice() {
+  const s = allShipments[selectedId];
+  if (s) generateInvoice(s);
+}
+
+function generateInvoice(s) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const W = 210, M = 18, cw = W - M * 2;
+
+  doc.setTextColor(14, 165, 233);
+  doc.setFontSize(110);
+  doc.setFont('helvetica', 'bold');
+  doc.setGState(new doc.GState({ opacity: 0.045 }));
+  doc.text('SE', W / 2, 148, { align: 'center' });
+  doc.setGState(new doc.GState({ opacity: 1 }));
+
+  doc.setFillColor(10, 31, 61);
+  doc.rect(0, 0, W, 46, 'F');
+  doc.setFillColor(26, 63, 114);
+  doc.rect(0, 40, W, 6, 'F');
+
+  doc.setFillColor(14, 165, 233);
+  doc.roundedRect(M, 7, 20, 20, 3, 3, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  doc.text('SE', M + 10, 20, { align: 'center' });
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Swift Express Delivery', M + 24, 16);
+  doc.setFontSize(8.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(180, 210, 240);
+  doc.text('Reliable · Fast · Global  ·  info.guaranteeshipping@gmail.com  ·  +1 62 SE-SHIPS', M + 24, 23);
+  doc.text('506 S Spring St #13308, Los Angeles, CA 90013, USA', M + 24, 29);
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('SHIPPING RECEIPT', W - M, 16, { align: 'right' });
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(180, 210, 240);
+  doc.text('Official Document', W - M, 23, { align: 'right' });
+
+  doc.setFillColor(14, 165, 233);
+  doc.roundedRect(M, 52, cw, 13, 3, 3, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.text('TRACKING ID: ' + s.id, W / 2, 60.5, { align: 'center' });
+
+  let y = 73;
+  const col1x = M, col2x = W / 2 + 3, colW = (cw / 2) - 3;
+
+  doc.setFillColor(224, 242, 254);
+  doc.roundedRect(col1x, y, colW, 46, 2, 2, 'F');
+  doc.setDrawColor(26, 63, 114);
+  doc.setLineWidth(0.4);
+  doc.roundedRect(col1x, y, colW, 46, 2, 2, 'S');
+  doc.setTextColor(10, 31, 61);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  doc.text('SENDER INFORMATION', col1x + 4, y + 7);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.2);
+  doc.setTextColor(30, 50, 80);
+  doc.text('Name:    ' + s.senderName,  col1x + 4, y + 15);
+  doc.text('Phone:   ' + s.senderPhone, col1x + 4, y + 22);
+  doc.text('Email:   ' + s.senderEmail, col1x + 4, y + 29);
+  doc.text('Origin:  ' + s.origin,       col1x + 4, y + 36);
+
+  doc.setFillColor(240, 249, 255);
+  doc.roundedRect(col2x, y, colW, 46, 2, 2, 'F');
+  doc.setDrawColor(14, 165, 233);
+  doc.roundedRect(col2x, y, colW, 46, 2, 2, 'S');
+  doc.setTextColor(10, 31, 61);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.text('RECEIVER INFORMATION', col2x + 4, y + 7);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.2);
+  doc.setTextColor(30, 50, 80);
+  doc.text('Name:    ' + s.receiverName,  col2x + 4, y + 15);
+  doc.text('Phone:   ' + s.receiverPhone, col2x + 4, y + 22);
+  doc.text('Email:   ' + s.receiverEmail, col2x + 4, y + 29);
+  doc.text('Dest:    ' + s.destination,    col2x + 4, y + 36);
+
+  y += 52;
+
+  doc.setFillColor(10, 31, 61);
+  doc.roundedRect(M, y, cw, 8, 2, 2, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(8.5);
+  doc.setFont('helvetica', 'bold');
+  doc.text('SHIPMENT DETAILS', M + 4, y + 5.5);
+  y += 10;
+
+  [
+    ['Goods Description', s.goods],
+    ['Item Type',         s.itemType || '—'],
+    ['Weight',            s.weight],
+    ['Quantity',          s.quantity || '1'],
+    ['Declared Value',    s.declaredValue || 'N/A'],
+    ['Service Type',      s.service || 'International Air Express'],
+    ['Date Shipped',      fmtDateOnly(s.dateShipped)],
+    ['Expected Delivery', fmtDateOnly(s.eta)],
+    ['Current Status',    s.status],
+    ['Special Notes',     s.notes || 'None'],
+  ].forEach((row, i) => {
+    doc.setFillColor(...(i % 2 === 0 ? [248,252,255] : [255,255,255]));
+    doc.rect(M, y, cw, 8, 'F');
+    doc.setTextColor(74, 96, 128);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text(row[0], M + 4, y + 5.5);
+    doc.setTextColor(10, 31, 61);
+    doc.setFont('helvetica', 'bold');
+    doc.text(String(row[1]), M + 72, y + 5.5);
+    y += 8;
+  });
+
+  y += 6;
+
+  if (s.history && s.history.length > 0) {
+    doc.setFillColor(10, 31, 61);
+    doc.roundedRect(M, y, cw, 8, 2, 2, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(8.5);
+    doc.setFont('helvetica', 'bold');
+    doc.text('TRACKING HISTORY', M + 4, y + 5.5);
+    y += 10;
+    s.history.slice().reverse().forEach((h, i) => {
+      doc.setFillColor(...(i % 2 === 0 ? [240,249,255] : [255,255,255]));
+      doc.rect(M, y, cw, 8, 'F');
+      doc.setTextColor(10, 31, 61);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text('▸ ' + h.location + (h.status ? ' ['+h.status+']' : ''), M + 4, y + 5.5);
+      doc.setTextColor(74, 96, 128);
+      doc.text(fmtDate(h.time), W - M - 4, y + 5.5, { align: 'right' });
+      y += 8;
+    });
+    y += 4;
+  }
+
+  const isDelivered = s.status === 'Delivered';
+  const isTransit   = s.status === 'In Transit' || s.status === 'Out for Delivery';
+  doc.setFillColor(...(isDelivered ? [14,165,233] : isTransit ? [10,31,61] : [74,96,128]));
+  doc.roundedRect(M, y, cw, 13, 3, 3, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.text('STATUS: ' + s.status.toUpperCase(), W / 2, y + 8.5, { align: 'center' });
+  y += 19;
+
+  doc.setDrawColor(176, 207, 234);
+  doc.setLineWidth(0.3);
+  doc.line(M, y, W - M, y);
+  y += 6;
+  doc.setTextColor(74, 96, 128);
+  doc.setFontSize(7.5);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Generated by Swift Express Delivery Company Admin Portal · ' + new Date().toLocaleString(), W / 2, y, { align: 'center' });
+  y += 5;
+  doc.text('For tracking enquiries: info.guaranteeshipping@gmail.com · This is an official shipping receipt.', W / 2, y, { align: 'center' });
+
+  if (isDelivered) {
+    doc.setTextColor(14, 165, 233);
+    doc.setFontSize(44);
+    doc.setFont('helvetica', 'bold');
+    doc.setGState(new doc.GState({ opacity: 0.07 }));
+    doc.text('DELIVERED', W / 2, 190, { align: 'center', angle: 35 });
+    doc.setGState(new doc.GState({ opacity: 1 }));
+  }
+
+  doc.save('SwiftExpress-Invoice-' + s.id + '.pdf');
+  showToast('Invoice downloaded ✓', 'success');
+}
+
+function esc(str) {
+  const d = document.createElement('div');
+  d.textContent = str || '';
+  return d.innerHTML;
+}
+function setText(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val || '—';
+}
+function statusClass(s) {
+  if (s === 'Delivered') return 'delivered';
+  if (s === 'In Transit' || s === 'Out for Delivery') return 'transit';
+  if (s === 'At Customs') return 'customs';
+  return 'pending';
+}
+function fmtDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleString(undefined, { month:'short', day:'numeric', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+function fmtDateOnly(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso + (iso.includes('T') ? '' : 'T00:00:00'));
+  return d.toLocaleDateString(undefined, { month:'long', day:'numeric', year:'numeric' });
+}
+</script>
+</body>
+</html>
