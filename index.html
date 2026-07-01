@@ -304,7 +304,6 @@ main{flex:1;max-width:1300px;width:100%;margin:0 auto;padding:26px 24px 60px;}
         </div>
       </div>
       <div class="topbar-actions">
-        <a id="viewSiteLink" href="Frontend.html" target="_blank" class="btn btn-outline" style="padding:9px 16px;font-size:0.85rem;text-decoration:none;display:inline-flex;align-items:center;">↗ View Site</a>
         <button class="btn btn-outline" style="padding:9px 16px;font-size:0.85rem;" onclick="loadShipments()">↻ Refresh</button>
         <button class="btn btn-primary" style="padding:9px 16px;font-size:0.85rem;" onclick="switchTabByName('create')">➕ New Shipment</button>
       </div>
@@ -403,6 +402,7 @@ main{flex:1;max-width:1300px;width:100%;margin:0 auto;padding:26px 24px 60px;}
               <div class="detail-row"><span class="k">Date Shipped</span><span class="v" id="d_dateShipped">—</span></div>
               <div class="detail-row"><span class="k">Expected Delivery</span><span class="v" id="d_eta">—</span></div>
               <div class="detail-row"><span class="k">Special Notes</span><span class="v" id="d_notes">—</span></div>
+              <div class="detail-row"><span class="k">Ready for Pickup</span><span class="v" id="d_pickup">—</span></div>
 
               <div class="section-title">🔄 Update Tracking</div>
               <div class="form-row">
@@ -418,6 +418,10 @@ main{flex:1;max-width:1300px;width:100%;margin:0 auto;padding:26px 24px 60px;}
               <div class="field-inline" style="margin-bottom:6px;">
                 <label>Note (optional)</label>
                 <input type="text" id="u_note" placeholder="e.g. Cleared customs, awaiting local courier handoff">
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;padding:10px 0 14px;">
+                <input type="checkbox" id="u_pickup" style="width:18px;height:18px;accent-color:var(--sky-accent);cursor:pointer;">
+                <label for="u_pickup" style="font-size:0.88rem;font-weight:600;color:var(--ink-dark);cursor:pointer;margin:0;">Mark as Ready for Pickup</label>
               </div>
               <div class="actions-row">
                 <button class="btn btn-primary" onclick="addLocationUpdate()">Update Stage</button>
@@ -618,24 +622,13 @@ main{flex:1;max-width:1300px;width:100%;margin:0 auto;padding:26px 24px 60px;}
 
         <div class="panel" style="max-width:500px;">
           <h2>Customer Tracking Page</h2>
-          <div class="sub">Public URL where customers can track shipments (defaults to Tracker.html in the same folder as this admin page — override only if you host it elsewhere).</div>
+          <div class="sub">Set the public URL where customers can track shipments. Used to build tracking links.</div>
           <div class="field-inline" style="margin-bottom:14px;">
             <label>Tracking Page URL</label>
-            <input type="text" id="trackBaseUrl" placeholder="https://yourdomain.com/Tracker.html">
+            <input type="text" id="trackBaseUrl" placeholder="https://yourdomain.com/swift-express-tracking.html">
           </div>
           <button class="btn btn-primary" onclick="saveTrackBaseUrl()">Save URL</button>
           <div class="pwd-status ok" id="trackUrlOk" style="color:var(--green);">✅ Saved.</div>
-        </div>
-
-        <div class="panel" style="max-width:500px;">
-          <h2>Main Website</h2>
-          <div class="sub">Public URL of your marketing site (defaults to Frontend.html in the same folder as this admin page — override only if you host it elsewhere).</div>
-          <div class="field-inline" style="margin-bottom:14px;">
-            <label>Website URL</label>
-            <input type="text" id="siteBaseUrl" placeholder="https://yourdomain.com/Frontend.html">
-          </div>
-          <button class="btn btn-primary" onclick="saveSiteBaseUrl()">Save URL</button>
-          <div class="pwd-status ok" id="siteUrlOk" style="color:var(--green);">✅ Saved.</div>
         </div>
       </div>
     </main>
@@ -659,7 +652,6 @@ const EJS_TEMPLATE_ID   = 'template_b75pm4q';
 const SESSION_KEY = 'gd_admin_session';
 const CREDS_KEY   = 'gd_admin_creds';
 const TRACK_URL_KEY = 'gd_track_base_url';
-const SITE_URL_KEY = 'gd_site_base_url';
 
 // 9-stage customer-facing tracking journey
 const STAGES = ['Shipment Created','Picked Up','Warehouse','Airport','Customs',
@@ -669,11 +661,7 @@ emailjs.init({ publicKey: EJS_PUBLIC_KEY });
 
 function getTrackBaseUrl() {
   return localStorage.getItem(TRACK_URL_KEY) ||
-    (window.location.href.replace(/[^\/]*$/, '') + 'Tracker.html');
-}
-function getMainSiteUrl() {
-  return localStorage.getItem(SITE_URL_KEY) ||
-    (window.location.href.replace(/[^\/]*$/, '') + 'Frontend.html');
+    (window.location.href.replace(/[^\/]*$/, '') + 'swift-express-tracking.html');
 }
 function saveTrackBaseUrl() {
   const v = document.getElementById('trackBaseUrl').value.trim();
@@ -682,15 +670,6 @@ function saveTrackBaseUrl() {
   ok.style.display = 'block';
   setTimeout(() => ok.style.display = 'none', 2500);
   showToast('Tracking page URL saved', 'success');
-}
-function saveSiteBaseUrl() {
-  const v = document.getElementById('siteBaseUrl').value.trim();
-  if (v) localStorage.setItem(SITE_URL_KEY, v);
-  const ok = document.getElementById('siteUrlOk');
-  ok.style.display = 'block';
-  setTimeout(() => ok.style.display = 'none', 2500);
-  showToast('Website URL saved', 'success');
-  document.getElementById('viewSiteLink').href = getMainSiteUrl();
 }
 function buildTrackLink(id) {
   return getTrackBaseUrl() + '?id=' + encodeURIComponent(id);
@@ -735,8 +714,6 @@ function showAdmin() {
   document.getElementById('currentUser').textContent = getCreds().user;
   document.getElementById('settingsUser').textContent = getCreds().user;
   document.getElementById('trackBaseUrl').value = getTrackBaseUrl();
-  document.getElementById('siteBaseUrl').value = getMainSiteUrl();
-  document.getElementById('viewSiteLink').href = getMainSiteUrl();
   loadShipments();
 }
 document.getElementById('password').addEventListener('keydown', e => { if(e.key==='Enter') login(); });
@@ -879,6 +856,7 @@ async function createShipment() {
     eta          : get('f_eta'),
     status       : initialStage,
     service      : document.getElementById('f_service').value,
+    readyForPickup: false,
     notes        : get('f_notes') || 'None',
     created      : nowIso,
     history      : [{ location: get('f_origin'), status: initialStage, time: nowIso, note: 'Shipment registered with Swift Express.' }]
@@ -1042,10 +1020,12 @@ function renderDetail() {
   setText('d_dateShipped',  fmtDateOnly(s.dateShipped));
   setText('d_eta',          fmtDateOnly(s.eta));
   setText('d_notes',        s.notes || '—');
+  setText('d_pickup',       s.readyForPickup ? '✅ Yes' : 'No');
 
   document.getElementById('u_location').value = '';
   document.getElementById('u_note').value = '';
   document.getElementById('u_status').value   = s.status;
+  document.getElementById('u_pickup').checked  = !!s.readyForPickup;
 
   const histEl = document.getElementById('d_history');
   histEl.innerHTML = '';
@@ -1092,11 +1072,13 @@ async function addLocationUpdate() {
   const location = document.getElementById('u_location').value.trim();
   const status   = document.getElementById('u_status').value;
   const note     = document.getElementById('u_note').value.trim();
+  const pickup   = document.getElementById('u_pickup').checked;
   const s = allShipments[selectedId];
   if (!s) return;
   s.history = s.history || [];
   s.history.push({ location: location || s.destination || s.origin, status, time: new Date().toISOString(), note });
   s.status = status;
+  s.readyForPickup = pickup;
   try {
     await saveBin({ shipments: allShipments });
     renderList(document.querySelector('#tab-shipments .search-bar').value);
