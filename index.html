@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Swift Express Delivery Company — Admin</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <style>
@@ -21,11 +21,16 @@
   --text:#0D1F36;
   --border:#B0CFEA;
   --red:#B23A3A;
+  --green:#1AA37A;
+  --sidebar-w:240px;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'Inter',sans-serif;background:var(--off-white);color:var(--text);line-height:1.5;}
 h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif;}
 .mono{font-family:'JetBrains Mono',monospace;}
+a{color:inherit;}
+
+/* ===== LOGIN ===== */
 .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;
   background:linear-gradient(160deg,var(--ink-dark) 0%,var(--ink-mid) 55%,#0B3060 100%);padding:24px;}
 .login-card{background:#fff;border-radius:14px;padding:40px;max-width:420px;width:100%;
@@ -53,26 +58,48 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif;}
 .btn-danger:hover{background:#FCEDED;}
 .btn-green{background:var(--sky-accent);color:#fff;}
 .btn-green:hover{background:var(--ink);}
+.btn-outline{background:#fff;color:var(--ink);border:1.5px solid var(--border);}
+.btn-outline:hover{border-color:var(--sky-accent);color:var(--sky-accent);}
 .login-error{margin-top:14px;font-size:0.85rem;color:var(--red);font-weight:500;display:none;}
+
+/* ===== SHELL / SIDEBAR ===== */
 .shell{display:none;min-height:100vh;}
-header{background:linear-gradient(90deg,var(--ink-dark) 0%,var(--ink-mid) 100%);color:#fff;padding:16px 28px;
-  display:flex;align-items:center;justify-content:space-between;
-  border-bottom:1px solid rgba(255,255,255,0.10);}
-.logo{display:flex;align-items:center;gap:12px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.15rem;color:#fff;}
-.logo .mark{width:36px;height:36px;border-radius:9px;
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar-w);
+  background:linear-gradient(180deg,var(--ink-dark) 0%,#081830 100%);
+  color:#fff;display:flex;flex-direction:column;z-index:50;
+  border-right:1px solid rgba(255,255,255,0.08);}
+.sidebar-brand{padding:22px 20px;display:flex;align-items:center;gap:11px;
+  border-bottom:1px solid rgba(255,255,255,0.08);}
+.sidebar-brand .mark{width:38px;height:38px;border-radius:9px;flex-shrink:0;
   background:linear-gradient(135deg,var(--sky-accent),var(--ink));
   display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:0.85rem;
   letter-spacing:-0.03em;border:2px solid rgba(255,255,255,0.25);}
-.header-right{display:flex;align-items:center;gap:10px;font-size:0.85rem;flex-wrap:wrap;}
-.header-right .who{color:rgba(255,255,255,0.75);}
-.tabs{display:flex;gap:0;background:var(--ink-mid);padding:0 28px;border-bottom:2px solid rgba(255,255,255,0.08);}
-.tab-btn{padding:14px 20px;background:none;border:none;color:rgba(255,255,255,0.55);
-  font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:0.9rem;cursor:pointer;
-  border-bottom:3px solid transparent;transition:color .2s,border-color .2s;}
-.tab-btn.active{color:#fff;border-bottom-color:var(--sky-accent);}
+.sidebar-brand .name{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.98rem;line-height:1.2;}
+.sidebar-brand .tag{font-size:0.68rem;color:rgba(255,255,255,0.5);margin-top:2px;letter-spacing:0.03em;}
+.nav-section-label{font-size:0.68rem;text-transform:uppercase;letter-spacing:0.12em;color:rgba(255,255,255,0.35);
+  padding:18px 20px 8px;font-weight:600;}
+.nav-item{display:flex;align-items:center;gap:12px;padding:12px 20px;font-size:0.9rem;font-weight:500;
+  color:rgba(255,255,255,0.68);cursor:pointer;border-left:3px solid transparent;transition:all .15s;}
+.nav-item .ic{font-size:1.05rem;width:20px;text-align:center;}
+.nav-item:hover{background:rgba(255,255,255,0.05);color:#fff;}
+.nav-item.active{background:rgba(14,165,233,0.14);color:#fff;border-left-color:var(--sky-accent);}
+.sidebar-footer{margin-top:auto;padding:16px 20px;border-top:1px solid rgba(255,255,255,0.08);}
+.sidebar-footer .who{font-size:0.78rem;color:rgba(255,255,255,0.55);margin-bottom:10px;}
+.sidebar-footer .who strong{color:#fff;display:block;font-size:0.88rem;margin-top:2px;}
+.sidebar-toggle{display:none;}
+
+.content-wrap{margin-left:var(--sidebar-w);min-height:100vh;display:flex;flex-direction:column;}
+.topbar{background:#fff;border-bottom:1px solid var(--border);padding:16px 28px;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.topbar h1{font-size:1.25rem;color:var(--ink-dark);}
+.topbar .sub{font-size:0.82rem;color:var(--slate);margin-top:2px;}
+.topbar-actions{display:flex;gap:10px;align-items:center;}
+.menu-btn{display:none;background:var(--ink);color:#fff;border:none;border-radius:8px;width:38px;height:38px;font-size:1.1rem;cursor:pointer;}
+
+main{flex:1;max-width:1300px;width:100%;margin:0 auto;padding:26px 24px 60px;}
 .tab-content{display:none;}
 .tab-content.active{display:block;}
-main{max-width:1300px;margin:0 auto;padding:28px 20px;}
+
 .grid{display:grid;grid-template-columns:1.1fr 1.4fr;gap:24px;}
 @media(max-width:980px){.grid{grid-template-columns:1fr;}}
 .panel{background:#fff;border-radius:14px;padding:28px;border:1px solid var(--border);margin-bottom:24px;}
@@ -94,14 +121,32 @@ main{max-width:1300px;margin:0 auto;padding:28px 20px;}
 .field-inline textarea{resize:vertical;min-height:80px;}
 .field-inline input:focus,.field-inline select:focus,.field-inline textarea:focus{
   outline:none;border-color:var(--sky-accent);box-shadow:0 0 0 3px rgba(14,165,233,0.12);}
-.new-id-banner{margin-top:18px;padding:16px;background:var(--sky-light);border-radius:10px;
-  border:1.5px dashed var(--sky-accent);display:none;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
-.new-id-banner.show{display:flex;}
-.new-id-banner .id{font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:600;color:var(--ink-dark);}
-.new-id-banner .label{font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--slate);margin-bottom:4px;}
+
+/* ===== TRACKING PANEL (post-create) ===== */
+.track-panel{margin-top:20px;border-radius:16px;overflow:hidden;border:1.5px solid var(--sky-accent);
+  display:none;}
+.track-panel.show{display:block;}
+.track-panel-head{background:linear-gradient(120deg,var(--ink-dark),var(--ink-mid));color:#fff;padding:22px 26px;
+  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;}
+.track-panel-head .label{font-size:0.74rem;text-transform:uppercase;letter-spacing:0.1em;color:rgba(255,255,255,0.6);margin-bottom:4px;}
+.track-panel-head .id{font-family:'JetBrains Mono',monospace;font-size:1.35rem;font-weight:700;}
+.track-panel-body{background:#fff;padding:22px 26px;display:flex;gap:24px;flex-wrap:wrap;align-items:center;}
+.track-link-box{flex:1;min-width:260px;}
+.track-link-box .lbl{font-size:0.72rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--slate);font-weight:600;margin-bottom:8px;}
+.track-link-row{display:flex;gap:8px;}
+.track-link-row input{flex:1;padding:11px 13px;border-radius:8px;border:1.5px solid var(--border);
+  font-family:'JetBrains Mono',monospace;font-size:0.82rem;background:var(--off-white);color:var(--ink-dark);}
+.track-link-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.qr-box{text-align:center;flex-shrink:0;}
+.qr-box img{width:104px;height:104px;border-radius:10px;border:1.5px solid var(--border);padding:6px;background:#fff;}
+.qr-box .cap{font-size:0.7rem;color:var(--slate);margin-top:6px;}
+
 .copy-btn{background:var(--ink);color:#fff;border:none;border-radius:6px;padding:8px 14px;
   font-size:0.8rem;font-weight:600;cursor:pointer;font-family:'Space Grotesk',sans-serif;}
 .copy-btn:hover{background:var(--sky-accent);}
+.copy-btn.alt{background:var(--sky-accent);}
+.copy-btn.ghost{background:#fff;color:var(--ink);border:1.5px solid var(--border);}
+
 .ship-list{display:flex;flex-direction:column;gap:10px;}
 .ship-card{border:1px solid var(--border);border-radius:10px;padding:16px;cursor:pointer;transition:border-color .15s,background .15s;}
 .ship-card:hover{border-color:var(--ink);background:var(--sky-light);}
@@ -110,36 +155,30 @@ main{max-width:1300px;margin:0 auto;padding:28px 20px;}
 .ship-card .id{font-family:'JetBrains Mono',monospace;font-weight:600;font-size:0.92rem;color:var(--ink-dark);}
 .ship-card .route{font-size:0.85rem;color:var(--slate);}
 .status-badge{display:inline-block;padding:4px 11px;border-radius:99px;
-  font-size:0.7rem;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;}
-.status-badge.delivered{background:rgba(14,165,233,0.15);color:var(--ink-mid);}
+  font-size:0.7rem;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;white-space:nowrap;}
+.status-badge.delivered{background:rgba(26,163,122,0.15);color:var(--green);}
 .status-badge.transit{background:rgba(14,165,233,0.12);color:var(--sky-accent);}
 .status-badge.pending{background:rgba(74,96,128,0.12);color:var(--slate);}
 .status-badge.customs{background:rgba(180,140,30,0.15);color:#7a5c10;}
 .empty-state{text-align:center;padding:48px 20px;color:var(--slate);}
 .empty-state .icon{font-size:2.4rem;margin-bottom:12px;}
-.detail-row{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--sky-light);font-size:0.9rem;}
+.detail-row{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--sky-light);font-size:0.9rem;gap:10px;}
 .detail-row:last-child{border-bottom:none;}
-.detail-row .k{color:var(--slate);}
+.detail-row .k{color:var(--slate);flex-shrink:0;}
 .detail-row .v{font-weight:600;text-align:right;max-width:60%;color:var(--ink-dark);}
-.history-item{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--sky-light);font-size:0.88rem;}
-.history-item:last-child{border-bottom:none;}
-.history-dot{width:9px;height:9px;border-radius:50%;background:var(--ink);margin-top:5px;flex-shrink:0;}
-.history-item:first-child .history-dot{background:var(--sky-accent);}
-.history-content .loc{font-weight:600;color:var(--ink-dark);}
-.history-content .time{font-size:0.78rem;color:var(--slate);margin-top:2px;}
 .actions-row{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;}
 .placeholder-note{color:var(--slate);font-size:0.9rem;text-align:center;padding:30px 0;}
 .toast{position:fixed;bottom:24px;right:24px;background:var(--ink-dark);color:#fff;
   padding:14px 20px;border-radius:10px;font-size:0.88rem;font-weight:500;
-  box-shadow:0 8px 24px rgba(0,0,0,0.25);z-index:9999;
+  box-shadow:0 8px 24px rgba(0,0,0,0.25);z-index:9999;max-width:320px;
   transform:translateY(80px);opacity:0;transition:all 0.3s ease;pointer-events:none;}
 .toast.show{transform:translateY(0);opacity:1;}
-.toast.success{border-left:4px solid var(--sky-accent);}
+.toast.success{border-left:4px solid var(--green);}
 .toast.error{border-left:4px solid var(--red);}
 .toast.info{border-left:4px solid var(--ink);}
 .pwd-section{max-width:480px;}
 .pwd-status{font-size:0.85rem;margin-top:10px;font-weight:500;display:none;}
-.pwd-status.ok{color:var(--ink);}
+.pwd-status.ok{color:var(--green);}
 .pwd-status.err{color:var(--red);}
 .search-bar{width:100%;padding:11px 14px;border-radius:8px;border:1.5px solid var(--border);
   font-size:0.92rem;margin-bottom:16px;font-family:inherit;background:#fff;color:var(--text);}
@@ -148,11 +187,62 @@ main{max-width:1300px;margin:0 auto;padding:28px 20px;}
 @media(max-width:700px){.stats-row{grid-template-columns:1fr 1fr;}}
 .stat-card{background:#fff;border-radius:12px;padding:20px;border:1px solid var(--border);text-align:center;
   border-top:3px solid var(--sky-accent);}
+.stat-card.green{border-top-color:var(--green);}
+.stat-card.slate{border-top-color:var(--slate);}
+.stat-card.amber{border-top-color:#C99A2E;}
 .stat-card .val{font-family:'Space Grotesk',sans-serif;font-size:2rem;font-weight:700;color:var(--ink);}
 .stat-card .lbl{font-size:0.78rem;color:var(--slate);text-transform:uppercase;letter-spacing:0.06em;margin-top:4px;}
 .spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);
   border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px;}
 @keyframes spin{to{transform:rotate(360deg);}}
+
+/* ===== TIMELINE (dark card, matches reference) ===== */
+.timeline-card{background:linear-gradient(180deg,#15161b,#0c0d11);border-radius:18px;padding:24px 22px;
+  color:#fff;border:1px solid rgba(255,255,255,0.06);}
+.timeline-card .tl-title{font-size:0.72rem;text-transform:uppercase;letter-spacing:0.1em;color:rgba(255,255,255,0.45);
+  margin-bottom:14px;font-weight:600;}
+.tl-item{display:flex;align-items:flex-start;gap:13px;padding:9px 0;position:relative;}
+.tl-item:not(:last-child)::before{content:'';position:absolute;left:9px;top:28px;bottom:-4px;width:1.5px;background:rgba(255,255,255,0.12);}
+.tl-item.done:not(:last-child)::before{background:var(--sky-accent);}
+.tl-check{width:19px;height:19px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-size:0.66rem;border:1.5px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.3);margin-top:1px;background:#0c0d11;z-index:1;}
+.tl-item.done .tl-check{background:var(--sky-accent);border-color:var(--sky-accent);color:#fff;}
+.tl-item.current .tl-check{background:#fff;border-color:#fff;color:var(--ink-dark);box-shadow:0 0 0 4px rgba(14,165,233,0.25);}
+.tl-body{flex:1;}
+.tl-label{font-family:'JetBrains Mono',monospace;font-size:0.86rem;color:rgba(255,255,255,0.4);font-weight:500;}
+.tl-item.done .tl-label{color:#fff;}
+.tl-item.current .tl-label{color:var(--sky-accent);font-weight:600;}
+.tl-time{font-size:0.72rem;color:rgba(255,255,255,0.35);margin-top:2px;font-family:'JetBrains Mono',monospace;}
+.tl-note{font-size:0.76rem;color:rgba(255,255,255,0.5);margin-top:3px;}
+
+/* ===== CUSTOMERS ===== */
+.cust-list{display:flex;flex-direction:column;gap:10px;}
+.cust-card{border:1px solid var(--border);border-radius:10px;padding:16px 18px;display:flex;justify-content:space-between;
+  align-items:center;gap:14px;flex-wrap:wrap;cursor:pointer;transition:border-color .15s,background .15s;}
+.cust-card:hover{border-color:var(--sky-accent);background:var(--sky-light);}
+.cust-card .avatar{width:42px;height:42px;border-radius:50%;background:var(--ink);color:#fff;display:flex;
+  align-items:center;justify-content:center;font-weight:700;font-family:'Space Grotesk',sans-serif;flex-shrink:0;}
+.cust-info{flex:1;min-width:160px;}
+.cust-info .name{font-weight:600;color:var(--ink-dark);font-size:0.95rem;}
+.cust-info .meta{font-size:0.8rem;color:var(--slate);margin-top:2px;}
+.cust-stats{display:flex;gap:18px;font-size:0.82rem;color:var(--slate);}
+.cust-stats b{color:var(--ink-dark);font-family:'Space Grotesk',sans-serif;font-size:1rem;display:block;}
+
+/* ===== REPORTS ===== */
+.bar-row{display:flex;align-items:center;gap:12px;padding:9px 0;}
+.bar-row .lbl{width:160px;flex-shrink:0;font-size:0.85rem;color:var(--ink-dark);font-weight:500;}
+.bar-track{flex:1;height:10px;border-radius:99px;background:var(--sky-light);overflow:hidden;}
+.bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--ink),var(--sky-accent));}
+.bar-row .num{width:34px;text-align:right;font-weight:700;font-size:0.85rem;color:var(--ink-dark);flex-shrink:0;}
+.report-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+@media(max-width:900px){.report-grid{grid-template-columns:1fr;}}
+
+@media(max-width:880px){
+  .sidebar{transform:translateX(-100%);transition:transform .25s ease;box-shadow:0 0 40px rgba(0,0,0,0.3);}
+  .sidebar.open{transform:translateX(0);}
+  .content-wrap{margin-left:0;}
+  .menu-btn{display:inline-flex;align-items:center;justify-content:center;}
+}
 </style>
 </head>
 <body>
@@ -178,234 +268,366 @@ main{max-width:1300px;margin:0 auto;padding:28px 20px;}
 
 <!-- ADMIN SHELL -->
 <div class="shell" id="adminShell">
-  <header>
-    <div class="logo"><span class="mark">SE</span> Swift Express Delivery Company — Admin</div>
-    <div class="header-right">
-      <span class="who">Signed in as <strong id="currentUser">admin</strong></span>
-      <button class="btn btn-secondary" style="padding:9px 16px;font-size:0.85rem;" onclick="logout()">Log out</button>
-    </div>
-  </header>
 
-  <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('shipments',event)">📦 Shipments</button>
-    <button class="tab-btn" onclick="switchTab('create',event)">➕ New Shipment</button>
-    <button class="tab-btn" onclick="switchTab('settings',event)">⚙️ Settings</button>
-  </div>
-
-  <main>
-    <div class="stats-row">
-      <div class="stat-card"><div class="val" id="statTotal">0</div><div class="lbl">Total Shipments</div></div>
-      <div class="stat-card"><div class="val" id="statTransit">0</div><div class="lbl">In Transit</div></div>
-      <div class="stat-card"><div class="val" id="statDelivered">0</div><div class="lbl">Delivered</div></div>
-      <div class="stat-card"><div class="val" id="statPending">0</div><div class="lbl">Pending</div></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <span class="mark">SE</span>
+      <div>
+        <div class="name">Swift Express</div>
+        <div class="tag">Admin Dashboard</div>
+      </div>
     </div>
 
-    <!-- TAB: SHIPMENTS -->
-    <div class="tab-content active" id="tab-shipments">
-      <div class="grid">
-        <div class="panel" style="margin-bottom:0;">
-          <h2>All Shipments</h2>
-          <div class="sub">Select a shipment to view details or update location.</div>
-          <input class="search-bar" type="text" placeholder="🔍 Search by ID, name, or destination…" oninput="filterShipments(this.value)">
-          <div class="ship-list" id="shipList"></div>
-          <div class="empty-state" id="shipEmpty" style="display:none;">
-            <div class="icon">📦</div>
-            <div>No shipments yet. Create one in the New Shipment tab.</div>
+    <div class="nav-section-label">Main</div>
+    <div class="nav-item active" data-tab="dashboard" onclick="switchTab('dashboard',this)"><span class="ic">📦</span> Dashboard</div>
+    <div class="nav-item" data-tab="shipments" onclick="switchTab('shipments',this)"><span class="ic">🚚</span> Shipments</div>
+    <div class="nav-item" data-tab="create" onclick="switchTab('create',this)"><span class="ic">➕</span> New Shipment</div>
+    <div class="nav-item" data-tab="customers" onclick="switchTab('customers',this)"><span class="ic">👥</span> Customers</div>
+    <div class="nav-item" data-tab="reports" onclick="switchTab('reports',this)"><span class="ic">📈</span> Reports</div>
+
+    <div class="nav-section-label">System</div>
+    <div class="nav-item" data-tab="settings" onclick="switchTab('settings',this)"><span class="ic">⚙️</span> Settings</div>
+
+    <div class="sidebar-footer">
+      <div class="who">Signed in as<strong id="currentUser">admin</strong></div>
+      <button class="btn btn-secondary" style="width:100%;padding:9px 16px;font-size:0.85rem;" onclick="logout()">Log out</button>
+    </div>
+  </aside>
+
+  <div class="content-wrap">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button class="menu-btn" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+        <div>
+          <h1 id="topbarTitle">Dashboard</h1>
+          <div class="sub" id="topbarSub">Overview of all shipping activity</div>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-outline" style="padding:9px 16px;font-size:0.85rem;" onclick="loadShipments()">↻ Refresh</button>
+        <button class="btn btn-primary" style="padding:9px 16px;font-size:0.85rem;" onclick="switchTabByName('create')">➕ New Shipment</button>
+      </div>
+    </div>
+
+    <main>
+      <div class="stats-row">
+        <div class="stat-card"><div class="val" id="statTotal">0</div><div class="lbl">Total Shipments</div></div>
+        <div class="stat-card"><div class="val" id="statTransit">0</div><div class="lbl">In Transit</div></div>
+        <div class="stat-card green"><div class="val" id="statDelivered">0</div><div class="lbl">Delivered</div></div>
+        <div class="stat-card slate"><div class="val" id="statPending">0</div><div class="lbl">Pending Pickup</div></div>
+      </div>
+
+      <!-- TAB: DASHBOARD -->
+      <div class="tab-content active" id="tab-dashboard">
+        <div class="grid">
+          <div class="panel">
+            <h2>Recent Shipments</h2>
+            <div class="sub">Latest activity across your network.</div>
+            <div class="ship-list" id="dashRecentList"></div>
+            <div class="empty-state" id="dashEmpty" style="display:none;">
+              <div class="icon">📦</div>
+              <div>No shipments yet. Create your first shipment to get started.</div>
+            </div>
+          </div>
+          <div class="panel">
+            <h2>Shipments by Stage</h2>
+            <div class="sub">Where shipments currently sit in the journey.</div>
+            <div id="dashStageBars"></div>
           </div>
         </div>
+      </div>
 
-        <div class="panel" style="margin-bottom:0;">
-          <div id="detailEmpty" class="placeholder-note">Select a shipment from the list to view details and update tracking.</div>
-          <div id="detailContent" style="display:none;">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+      <!-- TAB: SHIPMENTS -->
+      <div class="tab-content" id="tab-shipments">
+        <div class="grid">
+          <div class="panel" style="margin-bottom:0;">
+            <h2>All Shipments</h2>
+            <div class="sub">Select a shipment to view details or update tracking.</div>
+            <input class="search-bar" type="text" placeholder="🔍 Search by ID, name, or destination…" oninput="filterShipments(this.value)">
+            <div class="ship-list" id="shipList"></div>
+            <div class="empty-state" id="shipEmpty" style="display:none;">
+              <div class="icon">📦</div>
+              <div>No shipments yet. Create one in the New Shipment tab.</div>
+            </div>
+          </div>
+
+          <div class="panel" style="margin-bottom:0;">
+            <div id="detailEmpty" class="placeholder-note">Select a shipment from the list to view details and update tracking.</div>
+            <div id="detailContent" style="display:none;">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:8px;">
+                <div>
+                  <h2 id="d_id" style="font-family:'JetBrains Mono',monospace;color:var(--ink-dark);"></h2>
+                  <div class="sub" id="d_beneficiary" style="margin-bottom:0;"></div>
+                </div>
+                <span class="status-badge" id="d_statusBadge"></span>
+              </div>
+
+              <!-- Tracking link panel (also shown in detail view) -->
+              <div class="track-panel show" style="margin-top:14px;margin-bottom:6px;">
+                <div class="track-panel-body" style="padding:16px 18px;gap:14px;">
+                  <div class="track-link-box">
+                    <div class="lbl">Customer Tracking Link</div>
+                    <div class="track-link-row">
+                      <input type="text" id="d_trackLink" readonly>
+                      <button class="copy-btn" onclick="copyTrackLink('d_trackLink')">Copy</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="section-title">📋 Tracking Timeline</div>
+              <div class="timeline-card" style="margin-bottom:20px;">
+                <div class="tl-title">Customer Sees</div>
+                <div id="d_timeline"></div>
+              </div>
+
+              <div class="section-title">📤 Sender Information</div>
+              <div class="detail-row"><span class="k">Name</span><span class="v" id="d_senderName">—</span></div>
+              <div class="detail-row"><span class="k">Phone</span><span class="v" id="d_senderPhone">—</span></div>
+              <div class="detail-row"><span class="k">Email</span><span class="v" id="d_senderEmail">—</span></div>
+              <div class="detail-row"><span class="k">Location</span><span class="v" id="d_origin">—</span></div>
+
+              <div class="section-title">📥 Receiver Information</div>
+              <div class="detail-row"><span class="k">Name</span><span class="v" id="d_receiverName">—</span></div>
+              <div class="detail-row"><span class="k">Phone</span><span class="v" id="d_receiverPhone">—</span></div>
+              <div class="detail-row"><span class="k">Email</span><span class="v" id="d_receiverEmail">—</span></div>
+              <div class="detail-row"><span class="k">Location</span><span class="v" id="d_destination">—</span></div>
+
+              <div class="section-title">📦 Shipment Details</div>
+              <div class="detail-row"><span class="k">Goods</span><span class="v" id="d_goods">—</span></div>
+              <div class="detail-row"><span class="k">Weight</span><span class="v" id="d_weight">—</span></div>
+              <div class="detail-row"><span class="k">Item Type</span><span class="v" id="d_itemType">—</span></div>
+              <div class="detail-row"><span class="k">Quantity</span><span class="v" id="d_quantity">—</span></div>
+              <div class="detail-row"><span class="k">Service</span><span class="v" id="d_service">—</span></div>
+              <div class="detail-row"><span class="k">Date Shipped</span><span class="v" id="d_dateShipped">—</span></div>
+              <div class="detail-row"><span class="k">Expected Delivery</span><span class="v" id="d_eta">—</span></div>
+              <div class="detail-row"><span class="k">Special Notes</span><span class="v" id="d_notes">—</span></div>
+
+              <div class="section-title">🔄 Update Tracking</div>
+              <div class="form-row">
+                <div class="field-inline">
+                  <label>Current Stage</label>
+                  <select id="u_status"></select>
+                </div>
+                <div class="field-inline">
+                  <label>Location</label>
+                  <input type="text" id="u_location" placeholder="e.g. Cairo Sorting Hub, Egypt">
+                </div>
+              </div>
+              <div class="field-inline" style="margin-bottom:6px;">
+                <label>Note (optional)</label>
+                <input type="text" id="u_note" placeholder="e.g. Cleared customs, awaiting local courier handoff">
+              </div>
+              <div class="actions-row">
+                <button class="btn btn-primary" onclick="addLocationUpdate()">Update Stage</button>
+                <button class="btn btn-green" onclick="downloadInvoice()">⬇ Download Invoice</button>
+                <button class="btn btn-outline" onclick="resendEmail()">📧 Resend Email</button>
+                <button class="btn btn-danger" onclick="deleteShipment()">🗑 Delete</button>
+              </div>
+
+              <div style="margin-top:24px;">
+                <div class="section-title">🕓 Update History (Internal Log)</div>
+                <div id="d_history"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: CREATE -->
+      <div class="tab-content" id="tab-create">
+        <div class="panel">
+          <h2>Create New Shipment</h2>
+          <div class="sub">Fill in all details. A tracking ID and customer tracking link will be auto-generated, and an email sent to the receiver.</div>
+
+          <div class="section-title">📤 Sender Information</div>
+          <div class="form-row">
+            <div class="field-inline"><label>Sender Full Name *</label><input type="text" id="f_senderName" placeholder="e.g. John Adeyemi"></div>
+            <div class="field-inline"><label>Sender Phone *</label><input type="tel" id="f_senderPhone" placeholder="+234 800 000 0000"></div>
+          </div>
+          <div class="form-row">
+            <div class="field-inline"><label>Sender Email *</label><input type="email" id="f_senderEmail" placeholder="sender@email.com"></div>
+            <div class="field-inline"><label>Sender Location / Address *</label><input type="text" id="f_origin" placeholder="e.g. Lagos, Nigeria"></div>
+          </div>
+
+          <div class="section-title">📥 Receiver Information</div>
+          <div class="form-row">
+            <div class="field-inline"><label>Receiver Full Name *</label><input type="text" id="f_receiverName" placeholder="e.g. James Smith"></div>
+            <div class="field-inline"><label>Receiver Phone *</label><input type="tel" id="f_receiverPhone" placeholder="+44 7700 000000"></div>
+          </div>
+          <div class="form-row">
+            <div class="field-inline"><label>Receiver Email *</label><input type="email" id="f_receiverEmail" placeholder="receiver@email.com"></div>
+            <div class="field-inline"><label>Receiver Location / Address *</label><input type="text" id="f_destination" placeholder="e.g. London, UK"></div>
+          </div>
+
+          <div class="section-title">📦 Goods & Shipment Information</div>
+          <div class="form-row">
+            <div class="field-inline"><label>Goods Description *</label><input type="text" id="f_goods" placeholder="e.g. Electronic devices, clothing…"></div>
+            <div class="field-inline"><label>Item Type *</label>
+              <select id="f_itemType">
+                <option value="">— Select type —</option>
+                <option>Documents</option>
+                <option>Electronics</option>
+                <option>Clothing & Apparel</option>
+                <option>Pharmaceuticals</option>
+                <option>Perishables / Food</option>
+                <option>Furniture</option>
+                <option>Automotive Parts</option>
+                <option>Jewelry & High-Value</option>
+                <option>Industrial Equipment</option>
+                <option>Art & Antiques</option>
+                <option>General Cargo</option>
+                <option>Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row-3">
+            <div class="field-inline"><label>Weight (kg) *</label><input type="text" id="f_weight" placeholder="e.g. 3.2 kg"></div>
+            <div class="field-inline"><label>Quantity</label><input type="text" id="f_quantity" placeholder="e.g. 2 boxes"></div>
+            <div class="field-inline"><label>Declared Value (USD)</label><input type="text" id="f_value" placeholder="e.g. $500"></div>
+          </div>
+          <div class="form-row">
+            <div class="field-inline"><label>Date Shipped *</label><input type="date" id="f_dateShipped"></div>
+            <div class="field-inline"><label>Expected Delivery Date *</label><input type="date" id="f_eta"></div>
+          </div>
+          <div class="form-row">
+            <div class="field-inline"><label>Initial Stage</label>
+              <select id="f_status"></select>
+            </div>
+            <div class="field-inline"><label>Service Type</label>
+              <select id="f_service">
+                <option>International Air Express</option>
+                <option>Ocean Freight</option>
+                <option>Rail Freight</option>
+                <option>Road Freight</option>
+                <option>Same-Day Express</option>
+                <option>White Glove Service</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-inline" style="margin-bottom:20px;">
+            <label>Special Notes / Instructions</label>
+            <textarea id="f_notes" placeholder="e.g. Fragile — handle with care. Keep refrigerated."></textarea>
+          </div>
+
+          <button class="btn btn-primary" style="width:auto;padding:14px 28px;" id="createBtn" onclick="createShipment()">
+            Generate Tracking ID & Create Shipment
+          </button>
+
+          <!-- Post-creation tracking panel -->
+          <div class="track-panel" id="newTrackPanel">
+            <div class="track-panel-head">
               <div>
-                <h2 id="d_id" style="font-family:'JetBrains Mono',monospace;color:var(--ink-dark);"></h2>
-                <div class="sub" id="d_beneficiary" style="margin-bottom:0;"></div>
+                <div class="label">✅ Shipment Created — Tracking ID</div>
+                <div class="id" id="newIdValue">—</div>
               </div>
-              <span class="status-badge" id="d_statusBadge"></span>
+              <span class="status-badge delivered" style="background:rgba(255,255,255,0.15);color:#fff;">Ready</span>
             </div>
-
-            <div class="section-title">📤 Sender Information</div>
-            <div class="detail-row"><span class="k">Name</span><span class="v" id="d_senderName">—</span></div>
-            <div class="detail-row"><span class="k">Phone</span><span class="v" id="d_senderPhone">—</span></div>
-            <div class="detail-row"><span class="k">Email</span><span class="v" id="d_senderEmail">—</span></div>
-            <div class="detail-row"><span class="k">Location</span><span class="v" id="d_origin">—</span></div>
-
-            <div class="section-title">📥 Receiver Information</div>
-            <div class="detail-row"><span class="k">Name</span><span class="v" id="d_receiverName">—</span></div>
-            <div class="detail-row"><span class="k">Phone</span><span class="v" id="d_receiverPhone">—</span></div>
-            <div class="detail-row"><span class="k">Email</span><span class="v" id="d_receiverEmail">—</span></div>
-            <div class="detail-row"><span class="k">Location</span><span class="v" id="d_destination">—</span></div>
-
-            <div class="section-title">📦 Shipment Details</div>
-            <div class="detail-row"><span class="k">Goods</span><span class="v" id="d_goods">—</span></div>
-            <div class="detail-row"><span class="k">Weight</span><span class="v" id="d_weight">—</span></div>
-            <div class="detail-row"><span class="k">Item Type</span><span class="v" id="d_itemType">—</span></div>
-            <div class="detail-row"><span class="k">Quantity</span><span class="v" id="d_quantity">—</span></div>
-            <div class="detail-row"><span class="k">Date Shipped</span><span class="v" id="d_dateShipped">—</span></div>
-            <div class="detail-row"><span class="k">Expected Delivery</span><span class="v" id="d_eta">—</span></div>
-            <div class="detail-row"><span class="k">Status</span><span class="v" id="d_status">—</span></div>
-            <div class="detail-row"><span class="k">Special Notes</span><span class="v" id="d_notes">—</span></div>
-
-            <div class="section-title">🔄 Update Tracking</div>
-            <div class="form-row">
-              <div class="field-inline">
-                <label>New Location</label>
-                <input type="text" id="u_location" placeholder="e.g. Cairo Sorting Hub, Egypt">
+            <div class="track-panel-body">
+              <div class="track-link-box">
+                <div class="lbl">Share this link with the customer</div>
+                <div class="track-link-row">
+                  <input type="text" id="newTrackLink" readonly>
+                  <button class="copy-btn" onclick="copyTrackLink('newTrackLink')">Copy</button>
+                </div>
+                <div class="track-link-actions">
+                  <button class="copy-btn alt" onclick="openTrackLink()">↗ Open Tracking Page</button>
+                  <button class="copy-btn" onclick="downloadLastInvoice()">⬇ Download Invoice</button>
+                  <button class="copy-btn ghost" onclick="copyNewId()">Copy ID Only</button>
+                </div>
               </div>
-              <div class="field-inline">
-                <label>Status</label>
-                <select id="u_status">
-                  <option value="Pending">Pending</option>
-                  <option value="In Transit">In Transit</option>
-                  <option value="At Customs">At Customs</option>
-                  <option value="Out for Delivery">Out for Delivery</option>
-                  <option value="Delivered">Delivered</option>
-                </select>
+              <div class="qr-box">
+                <img id="newQr" src="" alt="QR code">
+                <div class="cap">Scan to track</div>
               </div>
             </div>
-            <div class="actions-row">
-              <button class="btn btn-primary" onclick="addLocationUpdate()">Add Update</button>
-              <button class="btn btn-green" onclick="downloadInvoice()">⬇ Download Invoice</button>
-              <button class="btn btn-danger" onclick="deleteShipment()">🗑 Delete</button>
-            </div>
-
-            <div style="margin-top:24px;">
-              <div class="section-title">📋 Tracking History</div>
-              <div id="d_history"></div>
-            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- TAB: CREATE -->
-    <div class="tab-content" id="tab-create">
-      <div class="panel">
-        <h2>Create New Shipment</h2>
-        <div class="sub">Fill in all details. A tracking ID will be auto-generated and an email sent to the receiver.</div>
-
-        <div class="section-title">📤 Sender Information</div>
-        <div class="form-row">
-          <div class="field-inline"><label>Sender Full Name *</label><input type="text" id="f_senderName" placeholder="e.g. John Adeyemi"></div>
-          <div class="field-inline"><label>Sender Phone *</label><input type="tel" id="f_senderPhone" placeholder="+234 800 000 0000"></div>
-        </div>
-        <div class="form-row">
-          <div class="field-inline"><label>Sender Email *</label><input type="email" id="f_senderEmail" placeholder="sender@email.com"></div>
-          <div class="field-inline"><label>Sender Location / Address *</label><input type="text" id="f_origin" placeholder="e.g. Lagos, Nigeria"></div>
-        </div>
-
-        <div class="section-title">📥 Receiver Information</div>
-        <div class="form-row">
-          <div class="field-inline"><label>Receiver Full Name *</label><input type="text" id="f_receiverName" placeholder="e.g. James Smith"></div>
-          <div class="field-inline"><label>Receiver Phone *</label><input type="tel" id="f_receiverPhone" placeholder="+44 7700 000000"></div>
-        </div>
-        <div class="form-row">
-          <div class="field-inline"><label>Receiver Email *</label><input type="email" id="f_receiverEmail" placeholder="receiver@email.com"></div>
-          <div class="field-inline"><label>Receiver Location / Address *</label><input type="text" id="f_destination" placeholder="e.g. London, UK"></div>
-        </div>
-
-        <div class="section-title">📦 Goods & Shipment Information</div>
-        <div class="form-row">
-          <div class="field-inline"><label>Goods Description *</label><input type="text" id="f_goods" placeholder="e.g. Electronic devices, clothing…"></div>
-          <div class="field-inline"><label>Item Type *</label>
-            <select id="f_itemType">
-              <option value="">— Select type —</option>
-              <option>Documents</option>
-              <option>Electronics</option>
-              <option>Clothing & Apparel</option>
-              <option>Pharmaceuticals</option>
-              <option>Perishables / Food</option>
-              <option>Furniture</option>
-              <option>Automotive Parts</option>
-              <option>Jewelry & High-Value</option>
-              <option>Industrial Equipment</option>
-              <option>Art & Antiques</option>
-              <option>General Cargo</option>
-              <option>Other</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-row-3">
-          <div class="field-inline"><label>Weight (kg) *</label><input type="text" id="f_weight" placeholder="e.g. 3.2 kg"></div>
-          <div class="field-inline"><label>Quantity</label><input type="text" id="f_quantity" placeholder="e.g. 2 boxes"></div>
-          <div class="field-inline"><label>Declared Value (USD)</label><input type="text" id="f_value" placeholder="e.g. $500"></div>
-        </div>
-        <div class="form-row">
-          <div class="field-inline"><label>Date Shipped *</label><input type="date" id="f_dateShipped"></div>
-          <div class="field-inline"><label>Expected Delivery Date *</label><input type="date" id="f_eta"></div>
-        </div>
-        <div class="form-row">
-          <div class="field-inline"><label>Initial Status</label>
-            <select id="f_status">
-              <option value="Pending">Pending</option>
-              <option value="In Transit" selected>In Transit</option>
-            </select>
-          </div>
-          <div class="field-inline"><label>Service Type</label>
-            <select id="f_service">
-              <option>International Air Express</option>
-              <option>Ocean Freight</option>
-              <option>Rail Freight</option>
-              <option>Road Freight</option>
-              <option>Same-Day Express</option>
-              <option>White Glove Service</option>
-            </select>
-          </div>
-        </div>
-        <div class="field-inline" style="margin-bottom:20px;">
-          <label>Special Notes / Instructions</label>
-          <textarea id="f_notes" placeholder="e.g. Fragile — handle with care. Keep refrigerated."></textarea>
-        </div>
-
-        <button class="btn btn-primary" style="width:auto;padding:14px 28px;" id="createBtn" onclick="createShipment()">
-          Generate Tracking ID & Create Shipment
-        </button>
-
-        <div class="new-id-banner" id="newIdBanner">
-          <div>
-            <div class="label">New Tracking ID Generated</div>
-            <div class="id" id="newIdValue">—</div>
-          </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <button class="copy-btn" onclick="copyNewId()">Copy ID</button>
-            <button class="copy-btn" style="background:var(--sky-accent);" onclick="downloadLastInvoice()">⬇ Invoice</button>
+      <!-- TAB: CUSTOMERS -->
+      <div class="tab-content" id="tab-customers">
+        <div class="panel">
+          <h2>Customers</h2>
+          <div class="sub">Everyone who has sent or received a shipment with Swift Express, derived automatically from your shipment records.</div>
+          <input class="search-bar" type="text" placeholder="🔍 Search customers by name or email…" oninput="filterCustomers(this.value)">
+          <div class="cust-list" id="custList"></div>
+          <div class="empty-state" id="custEmpty" style="display:none;">
+            <div class="icon">👥</div>
+            <div>No customers yet — they'll appear here once you create shipments.</div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- TAB: SETTINGS -->
-    <div class="tab-content" id="tab-settings">
-      <div class="panel pwd-section" style="max-width:500px;">
-        <h2>Change Password</h2>
-        <div class="sub">Update your admin login password.</div>
-        <div class="field-inline" style="margin-bottom:14px;">
-          <label>Current Password</label>
-          <input type="password" id="pwd_current" placeholder="Enter current password">
+      <!-- TAB: REPORTS -->
+      <div class="tab-content" id="tab-reports">
+        <div class="report-grid">
+          <div class="panel">
+            <h2>Shipments by Stage</h2>
+            <div class="sub">Distribution of all shipments across the tracking journey.</div>
+            <div id="repStageBars"></div>
+          </div>
+          <div class="panel">
+            <h2>Shipments by Service Type</h2>
+            <div class="sub">Which delivery service is used most.</div>
+            <div id="repServiceBars"></div>
+          </div>
+          <div class="panel">
+            <h2>Monthly Shipment Volume</h2>
+            <div class="sub">Shipments created per month (last 6 months).</div>
+            <div id="repMonthBars"></div>
+          </div>
+          <div class="panel">
+            <h2>Top Destinations</h2>
+            <div class="sub">Most common receiver locations.</div>
+            <div id="repDestBars"></div>
+          </div>
         </div>
-        <div class="field-inline" style="margin-bottom:14px;">
-          <label>New Password</label>
-          <input type="password" id="pwd_new" placeholder="At least 6 characters">
-        </div>
-        <div class="field-inline" style="margin-bottom:18px;">
-          <label>Confirm New Password</label>
-          <input type="password" id="pwd_confirm" placeholder="Repeat new password">
-        </div>
-        <button class="btn btn-primary" onclick="changePassword()">Update Password</button>
-        <div class="pwd-status ok" id="pwdOk">✅ Password updated successfully.</div>
-        <div class="pwd-status err" id="pwdErr"></div>
       </div>
 
-      <div class="panel" style="max-width:500px;">
-        <h2>Admin Credentials</h2>
-        <div class="sub">Current login information (read-only display).</div>
-        <div class="detail-row"><span class="k">Username</span><span class="v" id="settingsUser">admin</span></div>
-        <div class="detail-row"><span class="k">Password</span><span class="v">••••••••</span></div>
-        <div class="detail-row"><span class="k">Session</span><span class="v" style="color:var(--sky-accent);">Active ✓</span></div>
+      <!-- TAB: SETTINGS -->
+      <div class="tab-content" id="tab-settings">
+        <div class="panel pwd-section" style="max-width:500px;">
+          <h2>Change Password</h2>
+          <div class="sub">Update your admin login password.</div>
+          <div class="field-inline" style="margin-bottom:14px;">
+            <label>Current Password</label>
+            <input type="password" id="pwd_current" placeholder="Enter current password">
+          </div>
+          <div class="field-inline" style="margin-bottom:14px;">
+            <label>New Password</label>
+            <input type="password" id="pwd_new" placeholder="At least 6 characters">
+          </div>
+          <div class="field-inline" style="margin-bottom:18px;">
+            <label>Confirm New Password</label>
+            <input type="password" id="pwd_confirm" placeholder="Repeat new password">
+          </div>
+          <button class="btn btn-primary" onclick="changePassword()">Update Password</button>
+          <div class="pwd-status ok" id="pwdOk">✅ Password updated successfully.</div>
+          <div class="pwd-status err" id="pwdErr"></div>
+        </div>
+
+        <div class="panel" style="max-width:500px;">
+          <h2>Admin Credentials</h2>
+          <div class="sub">Current login information (read-only display).</div>
+          <div class="detail-row"><span class="k">Username</span><span class="v" id="settingsUser">admin</span></div>
+          <div class="detail-row"><span class="k">Password</span><span class="v">••••••••</span></div>
+          <div class="detail-row"><span class="k">Session</span><span class="v" style="color:var(--sky-accent);">Active ✓</span></div>
+        </div>
+
+        <div class="panel" style="max-width:500px;">
+          <h2>Customer Tracking Page</h2>
+          <div class="sub">Set the public URL where customers can track shipments. Used to build tracking links.</div>
+          <div class="field-inline" style="margin-bottom:14px;">
+            <label>Tracking Page URL</label>
+            <input type="text" id="trackBaseUrl" placeholder="https://yourdomain.com/swift-express-tracking.html">
+          </div>
+          <button class="btn btn-primary" onclick="saveTrackBaseUrl()">Save URL</button>
+          <div class="pwd-status ok" id="trackUrlOk" style="color:var(--green);">✅ Saved.</div>
+        </div>
       </div>
-    </div>
-  </main>
+    </main>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -414,18 +636,48 @@ main{max-width:1300px;margin:0 auto;padding:28px 20px;}
 // ═══════════════════════════════════════════════════
 // CONFIG — CREDENTIALS
 // ═══════════════════════════════════════════════════
-const JSONBIN_BIN_ID   = '6a3fd6fcda38895dfe078dc7';
-const JSONBIN_API_KEY  = '$2a$10$PwnR0G10b45nSZx9ntoBOenxK//HWPqHxJJlHpejPP9pBpvVb/KKi';
-const JSONBIN_BASE     = 'https://api.jsonbin.io/v3/b/' + JSONBIN_BIN_ID;
+const JSONBIN_BIN_ID    = '6a42036ff5f4af5e293fbe91';
+const JSONBIN_MASTER_KEY= '$2a$10$ZV9eFg0xbLWjpDRBeeuyhe7TOcZ.Ru2nDPWfoMnYnDvIjNR7Hzlfa';
+const JSONBIN_BASE       = 'https://api.jsonbin.io/v3/b/' + JSONBIN_BIN_ID;
 
-const EJS_PUBLIC_KEY   = 'k-QbN1cUxicfDOSsO';
-const EJS_SERVICE_ID   = 'service_ts6s0gr';
-const EJS_TEMPLATE_ID  = 'template_qbk653l';
+const EJS_PUBLIC_KEY    = 'upQoI23DRdOWdZQfk';
+const EJS_SERVICE_ID    = 'service_96nfk5d';
+const EJS_TEMPLATE_ID   = 'template_b75pm4q';
 
 const SESSION_KEY = 'gd_admin_session';
 const CREDS_KEY   = 'gd_admin_creds';
+const TRACK_URL_KEY = 'gd_track_base_url';
+
+// 9-stage customer-facing tracking journey
+const STAGES = ['Shipment Created','Picked Up','Warehouse','Airport','Customs',
+  'Destination Country','Local Distribution','Out for Delivery','Delivered'];
 
 emailjs.init({ publicKey: EJS_PUBLIC_KEY });
+
+function getTrackBaseUrl() {
+  return localStorage.getItem(TRACK_URL_KEY) ||
+    (window.location.href.replace(/[^\/]*$/, '') + 'swift-express-tracking.html');
+}
+function saveTrackBaseUrl() {
+  const v = document.getElementById('trackBaseUrl').value.trim();
+  if (v) localStorage.setItem(TRACK_URL_KEY, v);
+  const ok = document.getElementById('trackUrlOk');
+  ok.style.display = 'block';
+  setTimeout(() => ok.style.display = 'none', 2500);
+  showToast('Tracking page URL saved', 'success');
+}
+function buildTrackLink(id) {
+  return getTrackBaseUrl() + '?id=' + encodeURIComponent(id);
+}
+
+function populateStageSelects() {
+  ['u_status','f_status'].forEach(selId => {
+    const sel = document.getElementById(selId);
+    sel.innerHTML = STAGES.map(s => `<option value="${s}">${s}</option>`).join('');
+  });
+  document.getElementById('f_status').value = 'Shipment Created';
+}
+populateStageSelects();
 
 function getCreds() {
   try { return JSON.parse(localStorage.getItem(CREDS_KEY)) || { user:'admin', pass:'admin3030' }; }
@@ -456,6 +708,7 @@ function showAdmin() {
   document.getElementById('adminShell').style.display = 'block';
   document.getElementById('currentUser').textContent = getCreds().user;
   document.getElementById('settingsUser').textContent = getCreds().user;
+  document.getElementById('trackBaseUrl').value = getTrackBaseUrl();
   loadShipments();
 }
 document.getElementById('password').addEventListener('keydown', e => { if(e.key==='Enter') login(); });
@@ -480,12 +733,32 @@ function changePassword() {
   showToast('Password updated successfully!', 'success');
 }
 
-function switchTab(name, e) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+const TAB_META = {
+  dashboard: ['Dashboard','Overview of all shipping activity'],
+  shipments: ['Shipments','Manage and update every shipment'],
+  create:    ['New Shipment','Register a new shipment and notify the customer'],
+  customers: ['Customers','Everyone who has shipped with you'],
+  reports:   ['Reports','Performance and volume insights'],
+  settings:  ['Settings','Account and tracking page configuration'],
+};
+
+function switchTab(name, el) {
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
-  if (e && e.currentTarget) e.currentTarget.classList.add('active');
+  if (el) el.classList.add('active');
+  else document.querySelector(`.nav-item[data-tab="${name}"]`).classList.add('active');
+  const meta = TAB_META[name];
+  if (meta) {
+    document.getElementById('topbarTitle').textContent = meta[0];
+    document.getElementById('topbarSub').textContent = meta[1];
+  }
+  document.getElementById('sidebar').classList.remove('open');
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'customers') renderCustomers();
+  if (name === 'reports') renderReports();
 }
+function switchTabByName(name) { switchTab(name, document.querySelector(`.nav-item[data-tab="${name}"]`)); }
 
 function showToast(msg, type='info') {
   const t = document.getElementById('toast');
@@ -496,7 +769,7 @@ function showToast(msg, type='info') {
 
 async function fetchBin() {
   const r = await fetch(JSONBIN_BASE + '/latest', {
-    headers: { 'X-Master-Key': JSONBIN_API_KEY }
+    headers: { 'X-Master-Key': JSONBIN_MASTER_KEY }
   });
   const d = await r.json();
   return d.record || { shipments: {} };
@@ -504,7 +777,7 @@ async function fetchBin() {
 async function saveBin(data) {
   await fetch(JSONBIN_BASE, {
     method: 'PUT',
-    headers: { 'Content-Type':'application/json', 'X-Master-Key': JSONBIN_API_KEY },
+    headers: { 'Content-Type':'application/json', 'X-Master-Key': JSONBIN_MASTER_KEY },
     body: JSON.stringify(data)
   });
 }
@@ -520,6 +793,10 @@ async function loadShipments() {
     allShipments = data.shipments || {};
     renderList();
     updateStats();
+    renderDashboard();
+    if (document.getElementById('tab-customers').classList.contains('active')) renderCustomers();
+    if (document.getElementById('tab-reports').classList.contains('active')) renderReports();
+    if (selectedId) renderDetail();
     showToast('Shipments loaded ✓', 'success');
   } catch(e) {
     showToast('Failed to load shipments. Check connection.', 'error');
@@ -553,6 +830,8 @@ async function createShipment() {
   btn.disabled = true;
 
   const id = generateTrackingId();
+  const nowIso = new Date().toISOString();
+  const initialStage = document.getElementById('f_status').value || 'Shipment Created';
   const shipment = {
     id,
     senderName   : get('f_senderName'),
@@ -570,11 +849,11 @@ async function createShipment() {
     declaredValue: get('f_value') || 'N/A',
     dateShipped  : get('f_dateShipped'),
     eta          : get('f_eta'),
-    status       : document.getElementById('f_status').value,
+    status       : initialStage,
     service      : document.getElementById('f_service').value,
     notes        : get('f_notes') || 'None',
-    created      : new Date().toISOString(),
-    history      : []
+    created      : nowIso,
+    history      : [{ location: get('f_origin'), status: initialStage, time: nowIso, note: 'Shipment registered with Swift Express.' }]
   };
 
   allShipments[id] = shipment;
@@ -582,11 +861,11 @@ async function createShipment() {
 
   try {
     await saveBin({ shipments: allShipments });
-    document.getElementById('newIdValue').textContent = id;
-    document.getElementById('newIdBanner').classList.add('show');
+    showTrackPanel(id);
     resetCreateForm();
     renderList();
     updateStats();
+    renderDashboard();
     showToast('Shipment created: ' + id, 'success');
     sendEmailNotification(shipment);
   } catch(e) {
@@ -596,13 +875,21 @@ async function createShipment() {
   btn.disabled = false;
 }
 
+function showTrackPanel(id) {
+  const link = buildTrackLink(id);
+  document.getElementById('newIdValue').textContent = id;
+  document.getElementById('newTrackLink').value = link;
+  document.getElementById('newQr').src = 'https://api.qrserver.com/v1/create-qr-code/?size=140x140&margin=4&data=' + encodeURIComponent(link);
+  document.getElementById('newTrackPanel').classList.add('show');
+}
+
 function resetCreateForm() {
   ['f_senderName','f_senderPhone','f_senderEmail','f_origin',
    'f_receiverName','f_receiverPhone','f_receiverEmail','f_destination',
    'f_goods','f_weight','f_quantity','f_value','f_dateShipped','f_eta','f_notes']
     .forEach(id => document.getElementById(id).value = '');
   document.getElementById('f_itemType').value = '';
-  document.getElementById('f_status').value = 'In Transit';
+  document.getElementById('f_status').value = 'Shipment Created';
   document.getElementById('f_service').value = 'International Air Express';
 }
 
@@ -610,12 +897,21 @@ function copyNewId() {
   navigator.clipboard.writeText(document.getElementById('newIdValue').textContent)
     .then(() => showToast('Tracking ID copied!', 'success'));
 }
+function copyTrackLink(inputId) {
+  const el = document.getElementById(inputId);
+  navigator.clipboard.writeText(el.value).then(() => showToast('Tracking link copied!', 'success'));
+}
+function openTrackLink() {
+  window.open(document.getElementById('newTrackLink').value, '_blank');
+}
 
 function sendEmailNotification(s) {
+  const link = buildTrackLink(s.id);
   emailjs.send(EJS_SERVICE_ID, EJS_TEMPLATE_ID, {
     to_name      : s.receiverName,
     to_email     : s.receiverEmail,
     tracking_id  : s.id,
+    tracking_link: link,
     sender_name  : s.senderName,
     sender_phone : s.senderPhone,
     sender_email : s.senderEmail,
@@ -632,13 +928,20 @@ function sendEmailNotification(s) {
   .then(() => showToast('📧 Email notification sent to receiver!', 'success'))
   .catch(() => showToast('Email sending failed — check EmailJS setup.', 'error'));
 }
+function resendEmail() {
+  const s = allShipments[selectedId];
+  if (s) sendEmailNotification(s);
+}
 
 function updateStats() {
   const all = Object.values(allShipments);
   document.getElementById('statTotal').textContent     = all.length;
-  document.getElementById('statTransit').textContent   = all.filter(s => s.status === 'In Transit' || s.status === 'Out for Delivery').length;
+  document.getElementById('statTransit').textContent   = all.filter(s => {
+    const i = STAGES.indexOf(s.status);
+    return i > 0 && i < STAGES.length - 1;
+  }).length;
   document.getElementById('statDelivered').textContent = all.filter(s => s.status === 'Delivered').length;
-  document.getElementById('statPending').textContent   = all.filter(s => s.status === 'Pending' || s.status === 'At Customs').length;
+  document.getElementById('statPending').textContent   = all.filter(s => s.status === 'Shipment Created').length;
 }
 
 function renderList(filter='') {
@@ -650,30 +953,31 @@ function renderList(filter='') {
   container.innerHTML = '';
   if (list.length === 0) { empty.style.display = 'block'; return; }
   empty.style.display = 'none';
-  list.forEach(s => {
-    const div = document.createElement('div');
-    div.className = 'ship-card' + (s.id === selectedId ? ' active' : '');
-    div.onclick = () => selectShipment(s.id);
-    div.innerHTML = `
-      <div class="top">
-        <span class="id">${esc(s.id)}</span>
-        <span class="status-badge ${statusClass(s.status)}">${esc(s.status)}</span>
-      </div>
-      <div class="route">${esc(s.origin)} → ${esc(s.destination)}</div>
-      <div class="route" style="margin-top:3px;">📦 ${esc(s.goods)} · 👤 ${esc(s.receiverName)}</div>
-    `;
-    container.appendChild(div);
-  });
+  list.forEach(s => container.appendChild(buildShipCard(s)));
+}
+
+function buildShipCard(s, onClickOverride) {
+  const div = document.createElement('div');
+  div.className = 'ship-card' + (s.id === selectedId ? ' active' : '');
+  div.onclick = onClickOverride || (() => selectShipment(s.id));
+  div.innerHTML = `
+    <div class="top">
+      <span class="id">${esc(s.id)}</span>
+      <span class="status-badge ${statusClass(s.status)}">${esc(s.status)}</span>
+    </div>
+    <div class="route">${esc(s.origin)} → ${esc(s.destination)}</div>
+    <div class="route" style="margin-top:3px;">📦 ${esc(s.goods)} · 👤 ${esc(s.receiverName)}</div>
+  `;
+  return div;
 }
 
 function filterShipments(q) { renderList(q); }
 
 function selectShipment(id) {
   selectedId = id;
-  renderList(document.querySelector('.search-bar').value);
+  renderList(document.querySelector('#tab-shipments .search-bar').value);
   renderDetail();
-  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', i===0));
-  document.querySelectorAll('.tab-content').forEach((c,i) => c.classList.toggle('active', i===0));
+  switchTabByName('shipments');
 }
 
 function renderDetail() {
@@ -690,6 +994,10 @@ function renderDetail() {
   badge.textContent = s.status;
   badge.className = 'status-badge ' + statusClass(s.status);
 
+  document.getElementById('d_trackLink').value = buildTrackLink(s.id);
+
+  document.getElementById('d_timeline').innerHTML = renderTimelineHtml(s);
+
   setText('d_senderName',   s.senderName);
   setText('d_senderPhone',  s.senderPhone);
   setText('d_senderEmail',  s.senderEmail);
@@ -702,46 +1010,71 @@ function renderDetail() {
   setText('d_weight',       s.weight);
   setText('d_itemType',     s.itemType || '—');
   setText('d_quantity',     s.quantity || '—');
+  setText('d_service',      s.service || '—');
   setText('d_dateShipped',  fmtDateOnly(s.dateShipped));
   setText('d_eta',          fmtDateOnly(s.eta));
-  setText('d_status',       s.status);
   setText('d_notes',        s.notes || '—');
 
   document.getElementById('u_location').value = '';
+  document.getElementById('u_note').value = '';
   document.getElementById('u_status').value   = s.status;
 
   const histEl = document.getElementById('d_history');
   histEl.innerHTML = '';
   const items = (s.history || []).slice().reverse();
   if (items.length === 0) {
-    histEl.innerHTML = `<div class="history-item"><div class="history-dot"></div><div class="history-content"><div class="loc">Shipment created — ${esc(s.origin)}</div><div class="time">${fmtDate(s.created)}</div></div></div>`;
+    histEl.innerHTML = `<div class="detail-row"><span class="k">Shipment created</span><span class="v">${fmtDate(s.created)}</span></div>`;
   } else {
     items.forEach(h => {
       const div = document.createElement('div');
-      div.className = 'history-item';
-      div.innerHTML = `<div class="history-dot"></div><div class="history-content"><div class="loc">${esc(h.location)} <span style="color:var(--sky-accent);font-size:0.78rem;">[${esc(h.status||'')}]</span></div><div class="time">${fmtDate(h.time)}</div></div>`;
+      div.className = 'detail-row';
+      div.innerHTML = `<span class="k">${esc(h.location)} <span style="color:var(--sky-accent);">[${esc(h.status||'')}]</span>${h.note ? '<br><span style="font-size:0.78rem;color:var(--slate);">'+esc(h.note)+'</span>' : ''}</span><span class="v" style="font-weight:500;">${fmtDate(h.time)}</span>`;
       histEl.appendChild(div);
     });
   }
+}
+
+function renderTimelineHtml(s) {
+  const curIdx = STAGES.indexOf(s.status);
+  const stageTimes = {};
+  const stageNotes = {};
+  (s.history || []).forEach(h => {
+    if (STAGES.includes(h.status)) { stageTimes[h.status] = h.time; stageNotes[h.status] = h.note; }
+  });
+  if (!stageTimes['Shipment Created']) stageTimes['Shipment Created'] = s.created;
+
+  return STAGES.map((stage, i) => {
+    const done = curIdx >= 0 && i <= curIdx;
+    const isCurrent = i === curIdx;
+    const time = stageTimes[stage];
+    const note = stageNotes[stage];
+    return `<div class="tl-item ${done ? 'done' : ''} ${isCurrent ? 'current' : ''}">
+      <div class="tl-check">${done ? '✔' : ''}</div>
+      <div class="tl-body">
+        <div class="tl-label">${esc(stage)}</div>
+        ${time ? `<div class="tl-time">${fmtDate(time)}</div>` : ''}
+        ${note ? `<div class="tl-note">${esc(note)}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
 }
 
 async function addLocationUpdate() {
   if (!selectedId) return;
   const location = document.getElementById('u_location').value.trim();
   const status   = document.getElementById('u_status').value;
+  const note     = document.getElementById('u_note').value.trim();
   const s = allShipments[selectedId];
   if (!s) return;
-  if (location) {
-    s.history = s.history || [];
-    s.history.push({ location, status, time: new Date().toISOString() });
-  }
+  s.history = s.history || [];
+  s.history.push({ location: location || s.destination || s.origin, status, time: new Date().toISOString(), note });
   s.status = status;
   try {
     await saveBin({ shipments: allShipments });
-    renderList(document.querySelector('.search-bar').value);
+    renderList(document.querySelector('#tab-shipments .search-bar').value);
     renderDetail();
     updateStats();
-    showToast('Tracking updated ✓', 'success');
+    showToast('Tracking updated to "' + status + '" ✓', 'success');
   } catch(e) {
     showToast('Error saving update.', 'error');
   }
@@ -772,6 +1105,127 @@ function downloadInvoice() {
   if (s) generateInvoice(s);
 }
 
+// ═══════════════════════════════════════════════════
+// DASHBOARD / CUSTOMERS / REPORTS
+// ═══════════════════════════════════════════════════
+function renderDashboard() {
+  const all = Object.values(allShipments).sort((a,b) => new Date(b.created) - new Date(a.created));
+  const container = document.getElementById('dashRecentList');
+  const empty = document.getElementById('dashEmpty');
+  container.innerHTML = '';
+  if (all.length === 0) { empty.style.display = 'block'; }
+  else {
+    empty.style.display = 'none';
+    all.slice(0, 6).forEach(s => container.appendChild(buildShipCard(s, () => selectShipment(s.id))));
+  }
+  const counts = STAGES.map(stage => all.filter(s => s.status === stage).length);
+  const max = Math.max(1, ...counts);
+  document.getElementById('dashStageBars').innerHTML = STAGES.map((stage, i) => `
+    <div class="bar-row">
+      <div class="lbl">${stage}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(counts[i]/max*100).toFixed(0)}%;"></div></div>
+      <div class="num">${counts[i]}</div>
+    </div>`).join('');
+}
+
+function renderCustomers(filter='') {
+  const map = {};
+  Object.values(allShipments).forEach(s => {
+    [{ name: s.senderName, email: s.senderEmail, phone: s.senderPhone, role: 'Sender' },
+     { name: s.receiverName, email: s.receiverEmail, phone: s.receiverPhone, role: 'Receiver' }]
+    .forEach(p => {
+      if (!p.email) return;
+      const key = p.email.toLowerCase();
+      if (!map[key]) map[key] = { name: p.name, email: p.email, phone: p.phone, roles: new Set(), shipments: 0 };
+      map[key].roles.add(p.role);
+      map[key].shipments++;
+    });
+  });
+  let customers = Object.values(map);
+  if (filter) {
+    const f = filter.toLowerCase();
+    customers = customers.filter(c => c.name.toLowerCase().includes(f) || c.email.toLowerCase().includes(f));
+  }
+  customers.sort((a,b) => b.shipments - a.shipments);
+
+  const container = document.getElementById('custList');
+  const empty = document.getElementById('custEmpty');
+  container.innerHTML = '';
+  if (customers.length === 0) { empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  customers.forEach(c => {
+    const initials = c.name.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+    const div = document.createElement('div');
+    div.className = 'cust-card';
+    div.onclick = () => {
+      switchTabByName('shipments');
+      const bar = document.querySelector('#tab-shipments .search-bar');
+      bar.value = c.email;
+      filterShipments(c.email);
+    };
+    div.innerHTML = `
+      <div class="avatar">${esc(initials || '?')}</div>
+      <div class="cust-info">
+        <div class="name">${esc(c.name)}</div>
+        <div class="meta">${esc(c.email)} · ${esc(c.phone || '—')} · ${[...c.roles].join(' & ')}</div>
+      </div>
+      <div class="cust-stats"><div><b>${c.shipments}</b>shipment${c.shipments!==1?'s':''}</div></div>
+    `;
+    container.appendChild(div);
+  });
+}
+function filterCustomers(q) { renderCustomers(q); }
+
+function renderReports() {
+  const all = Object.values(allShipments);
+
+  const stageCounts = STAGES.map(stage => all.filter(s => s.status === stage).length);
+  const stageMax = Math.max(1, ...stageCounts);
+  document.getElementById('repStageBars').innerHTML = STAGES.map((stage, i) => `
+    <div class="bar-row"><div class="lbl">${stage}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(stageCounts[i]/stageMax*100).toFixed(0)}%;"></div></div>
+      <div class="num">${stageCounts[i]}</div></div>`).join('') || '<div class="placeholder-note">No data yet.</div>';
+
+  const services = {};
+  all.forEach(s => { const k = s.service || 'Unspecified'; services[k] = (services[k]||0)+1; });
+  const svcEntries = Object.entries(services).sort((a,b) => b[1]-a[1]);
+  const svcMax = Math.max(1, ...svcEntries.map(e => e[1]));
+  document.getElementById('repServiceBars').innerHTML = svcEntries.map(([k,v]) => `
+    <div class="bar-row"><div class="lbl">${esc(k)}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(v/svcMax*100).toFixed(0)}%;"></div></div>
+      <div class="num">${v}</div></div>`).join('') || '<div class="placeholder-note">No data yet.</div>';
+
+  const months = [];
+  const now = new Date();
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push({ key: d.getFullYear()+'-'+d.getMonth(), label: d.toLocaleDateString(undefined,{month:'short',year:'2-digit'}), count:0 });
+  }
+  all.forEach(s => {
+    const d = new Date(s.created);
+    const key = d.getFullYear()+'-'+d.getMonth();
+    const m = months.find(m => m.key === key);
+    if (m) m.count++;
+  });
+  const monthMax = Math.max(1, ...months.map(m => m.count));
+  document.getElementById('repMonthBars').innerHTML = months.map(m => `
+    <div class="bar-row"><div class="lbl">${m.label}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(m.count/monthMax*100).toFixed(0)}%;"></div></div>
+      <div class="num">${m.count}</div></div>`).join('');
+
+  const dest = {};
+  all.forEach(s => { const k = s.destination || 'Unspecified'; dest[k] = (dest[k]||0)+1; });
+  const destEntries = Object.entries(dest).sort((a,b) => b[1]-a[1]).slice(0,8);
+  const destMax = Math.max(1, ...destEntries.map(e => e[1]));
+  document.getElementById('repDestBars').innerHTML = destEntries.map(([k,v]) => `
+    <div class="bar-row"><div class="lbl">${esc(k)}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(v/destMax*100).toFixed(0)}%;"></div></div>
+      <div class="num">${v}</div></div>`).join('') || '<div class="placeholder-note">No data yet.</div>';
+}
+
+// ═══════════════════════════════════════════════════
+// INVOICE PDF
+// ═══════════════════════════════════════════════════
 function generateInvoice(s) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
@@ -809,11 +1263,12 @@ function generateInvoice(s) {
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
-  doc.text('SHIPPING RECEIPT', W - M, 16, { align: 'right' });
+  doc.text('SHIPPING INVOICE', W - M, 16, { align: 'right' });
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(180, 210, 240);
   doc.text('Official Document', W - M, 23, { align: 'right' });
+  doc.text('Issued: ' + new Date().toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}), W - M, 29, { align: 'right' });
 
   doc.setFillColor(14, 165, 233);
   doc.roundedRect(M, 52, cw, 13, 3, 3, 'F');
@@ -877,7 +1332,7 @@ function generateInvoice(s) {
     ['Service Type',      s.service || 'International Air Express'],
     ['Date Shipped',      fmtDateOnly(s.dateShipped)],
     ['Expected Delivery', fmtDateOnly(s.eta)],
-    ['Current Status',    s.status],
+    ['Current Stage',     s.status],
     ['Special Notes',     s.notes || 'None'],
   ].forEach((row, i) => {
     doc.setFillColor(...(i % 2 === 0 ? [248,252,255] : [255,255,255]));
@@ -900,30 +1355,32 @@ function generateInvoice(s) {
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(8.5);
     doc.setFont('helvetica', 'bold');
-    doc.text('TRACKING HISTORY', M + 4, y + 5.5);
+    doc.text('TRACKING TIMELINE', M + 4, y + 5.5);
     y += 10;
-    s.history.slice().reverse().forEach((h, i) => {
+    const curIdx = STAGES.indexOf(s.status);
+    STAGES.forEach((stage, i) => {
+      const done = curIdx >= 0 && i <= curIdx;
       doc.setFillColor(...(i % 2 === 0 ? [240,249,255] : [255,255,255]));
-      doc.rect(M, y, cw, 8, 'F');
-      doc.setTextColor(10, 31, 61);
+      doc.rect(M, y, cw, 7, 'F');
+      doc.setTextColor(...(done ? [14,165,233] : [180,190,205]));
       doc.setFontSize(8);
-      doc.setFont('helvetica', 'normal');
-      doc.text('▸ ' + h.location + (h.status ? ' ['+h.status+']' : ''), M + 4, y + 5.5);
-      doc.setTextColor(74, 96, 128);
-      doc.text(fmtDate(h.time), W - M - 4, y + 5.5, { align: 'right' });
-      y += 8;
+      doc.setFont('helvetica', done ? 'bold' : 'normal');
+      doc.text((done ? '✓ ' : '○ ') + stage, M + 4, y + 5);
+      y += 7;
     });
     y += 4;
   }
 
+  if (y > 250) { doc.addPage(); y = 20; }
+
   const isDelivered = s.status === 'Delivered';
-  const isTransit   = s.status === 'In Transit' || s.status === 'Out for Delivery';
-  doc.setFillColor(...(isDelivered ? [14,165,233] : isTransit ? [10,31,61] : [74,96,128]));
+  const isTransit   = !isDelivered && s.status !== 'Shipment Created';
+  doc.setFillColor(...(isDelivered ? [26,163,122] : isTransit ? [10,31,61] : [74,96,128]));
   doc.roundedRect(M, y, cw, 13, 3, 3, 'F');
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.text('STATUS: ' + s.status.toUpperCase(), W / 2, y + 8.5, { align: 'center' });
+  doc.text('CURRENT STAGE: ' + s.status.toUpperCase(), W / 2, y + 8.5, { align: 'center' });
   y += 19;
 
   doc.setDrawColor(176, 207, 234);
@@ -933,12 +1390,14 @@ function generateInvoice(s) {
   doc.setTextColor(74, 96, 128);
   doc.setFontSize(7.5);
   doc.setFont('helvetica', 'normal');
+  doc.text('Track this shipment online: ' + buildTrackLink(s.id), W / 2, y, { align: 'center' });
+  y += 5;
   doc.text('Generated by Swift Express Delivery Company Admin Portal · ' + new Date().toLocaleString(), W / 2, y, { align: 'center' });
   y += 5;
-  doc.text('For tracking enquiries: info.guaranteeshipping@gmail.com · This is an official shipping receipt.', W / 2, y, { align: 'center' });
+  doc.text('For tracking enquiries: info.guaranteeshipping@gmail.com · This is an official shipping invoice.', W / 2, y, { align: 'center' });
 
   if (isDelivered) {
-    doc.setTextColor(14, 165, 233);
+    doc.setTextColor(26, 163, 122);
     doc.setFontSize(44);
     doc.setFont('helvetica', 'bold');
     doc.setGState(new doc.GState({ opacity: 0.07 }));
@@ -961,9 +1420,9 @@ function setText(id, val) {
 }
 function statusClass(s) {
   if (s === 'Delivered') return 'delivered';
-  if (s === 'In Transit' || s === 'Out for Delivery') return 'transit';
-  if (s === 'At Customs') return 'customs';
-  return 'pending';
+  if (s === 'Customs') return 'customs';
+  if (s === 'Shipment Created') return 'pending';
+  return 'transit';
 }
 function fmtDate(iso) {
   if (!iso) return '—';
