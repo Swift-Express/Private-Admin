@@ -6,7 +6,6 @@
 <title>Swift Express Delivery Company — Admin</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <style>
 :root{
@@ -1234,103 +1233,129 @@ function renderReports() {
 }
 
 // ═══════════════════════════════════════════════════
-// INVOICE PDF
+// INVOICE JPG (rendered on a canvas, downloaded as .jpg)
 // ═══════════════════════════════════════════════════
+function rrPath(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+function fillRR(ctx, x, y, w, h, r, color) {
+  if (color) ctx.fillStyle = color;
+  rrPath(ctx, x, y, w, h, r);
+  ctx.fill();
+}
+function strokeRR(ctx, x, y, w, h, r, color, lineWidth) {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = lineWidth;
+  rrPath(ctx, x, y, w, h, r);
+  ctx.stroke();
+}
+
 function generateInvoice(s) {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-  const W = 210, M = 18, cw = W - M * 2;
+  const SCALE = 4; // px per "mm" — bump this up for a higher-resolution JPG
+  const W = 210, M = 18, cw = W - M * 2, H = 320;
+  const px = mm => mm * SCALE;
+  const FS = pt => pt * 0.3528 * SCALE; // pt (as used in the old layout) -> px
 
-  doc.setTextColor(14, 165, 233);
-  doc.setFontSize(110);
-  doc.setFont('helvetica', 'bold');
-  doc.setGState(new doc.GState({ opacity: 0.045 }));
-  doc.text('SE', W / 2, 148, { align: 'center' });
-  doc.setGState(new doc.GState({ opacity: 1 }));
+  const canvas = document.createElement('canvas');
+  canvas.width = px(W);
+  canvas.height = px(H);
+  const ctx = canvas.getContext('2d');
+  const FONT = 'Helvetica, Arial, sans-serif';
+  ctx.textBaseline = 'alphabetic';
 
-  doc.setFillColor(10, 31, 61);
-  doc.rect(0, 0, W, 46, 'F');
-  doc.setFillColor(26, 63, 114);
-  doc.rect(0, 40, W, 6, 'F');
+  // white background (JPG has no transparency)
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  doc.setFillColor(14, 165, 233);
-  doc.roundedRect(M, 7, 20, 20, 3, 3, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'bold');
-  doc.text('SE', M + 10, 20, { align: 'center' });
+  // watermark
+  ctx.save();
+  ctx.globalAlpha = 0.045;
+  ctx.fillStyle = 'rgb(14,165,233)';
+  ctx.font = `bold ${FS(110)}px ${FONT}`;
+  ctx.textAlign = 'center';
+  ctx.fillText('SE', px(W / 2), px(148));
+  ctx.restore();
 
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(18);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Swift Express Delivery', M + 24, 16);
-  doc.setFontSize(8.5);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(180, 210, 240);
-  doc.text('Reliable · Fast · Global  ·  info.guaranteeshipping@gmail.com  ·  +1 62 SE-SHIPS', M + 24, 23);
-  doc.text('506 S Spring St #13308, Los Angeles, CA 90013, USA', M + 24, 29);
+  // header
+  ctx.fillStyle = 'rgb(10,31,61)';
+  ctx.fillRect(0, 0, px(W), px(46));
+  ctx.fillStyle = 'rgb(26,63,114)';
+  ctx.fillRect(0, px(40), px(W), px(6));
 
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(14);
-  doc.setFont('helvetica', 'bold');
-  doc.text('SHIPPING INVOICE', W - M, 16, { align: 'right' });
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(180, 210, 240);
-  doc.text('Official Document', W - M, 23, { align: 'right' });
-  doc.text('Issued: ' + new Date().toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}), W - M, 29, { align: 'right' });
+  fillRR(ctx, px(M), px(7), px(20), px(20), px(3), 'rgb(14,165,233)');
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `bold ${FS(11)}px ${FONT}`;
+  ctx.textAlign = 'center';
+  ctx.fillText('SE', px(M + 10), px(20));
 
-  doc.setFillColor(14, 165, 233);
-  doc.roundedRect(M, 52, cw, 13, 3, 3, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(12);
-  doc.setFont('helvetica', 'bold');
-  doc.text('TRACKING ID: ' + s.id, W / 2, 60.5, { align: 'center' });
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `bold ${FS(18)}px ${FONT}`;
+  ctx.fillText('Swift Express Delivery', px(M + 24), px(16));
+  ctx.font = `${FS(8.5)}px ${FONT}`;
+  ctx.fillStyle = 'rgb(180,210,240)';
+  ctx.fillText('Reliable · Fast · Global  ·  info.guaranteeshipping@gmail.com  ·  +1 62 SE-SHIPS', px(M + 24), px(23));
+  ctx.fillText('506 S Spring St #13308, Los Angeles, CA 90013, USA', px(M + 24), px(29));
+
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `bold ${FS(14)}px ${FONT}`;
+  ctx.fillText('SHIPPING INVOICE', px(W - M), px(16));
+  ctx.font = `${FS(8)}px ${FONT}`;
+  ctx.fillStyle = 'rgb(180,210,240)';
+  ctx.fillText('Official Document', px(W - M), px(23));
+  ctx.fillText('Issued: ' + new Date().toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}), px(W - M), px(29));
+
+  // tracking id bar
+  fillRR(ctx, px(M), px(52), px(cw), px(13), px(3), 'rgb(14,165,233)');
+  ctx.fillStyle = '#ffffff';
+  ctx.textAlign = 'center';
+  ctx.font = `bold ${FS(12)}px ${FONT}`;
+  ctx.fillText('TRACKING ID: ' + s.id, px(W / 2), px(60.5));
 
   let y = 73;
   const col1x = M, col2x = W / 2 + 3, colW = (cw / 2) - 3;
 
-  doc.setFillColor(224, 242, 254);
-  doc.roundedRect(col1x, y, colW, 46, 2, 2, 'F');
-  doc.setDrawColor(26, 63, 114);
-  doc.setLineWidth(0.4);
-  doc.roundedRect(col1x, y, colW, 46, 2, 2, 'S');
-  doc.setTextColor(10, 31, 61);
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'bold');
-  doc.text('SENDER INFORMATION', col1x + 4, y + 7);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.2);
-  doc.setTextColor(30, 50, 80);
-  doc.text('Name:    ' + s.senderName,  col1x + 4, y + 15);
-  doc.text('Phone:   ' + s.senderPhone, col1x + 4, y + 22);
-  doc.text('Email:   ' + s.senderEmail, col1x + 4, y + 29);
-  doc.text('Origin:  ' + s.origin,       col1x + 4, y + 36);
+  // sender box
+  fillRR(ctx, px(col1x), px(y), px(colW), px(46), px(2), 'rgb(224,242,254)');
+  strokeRR(ctx, px(col1x), px(y), px(colW), px(46), px(2), 'rgb(26,63,114)', px(0.4));
+  ctx.textAlign = 'left';
+  ctx.fillStyle = 'rgb(10,31,61)';
+  ctx.font = `bold ${FS(8)}px ${FONT}`;
+  ctx.fillText('SENDER INFORMATION', px(col1x + 4), px(y + 7));
+  ctx.font = `${FS(8.2)}px ${FONT}`;
+  ctx.fillStyle = 'rgb(30,50,80)';
+  ctx.fillText('Name:    ' + s.senderName,  px(col1x + 4), px(y + 15));
+  ctx.fillText('Phone:   ' + s.senderPhone, px(col1x + 4), px(y + 22));
+  ctx.fillText('Email:   ' + s.senderEmail, px(col1x + 4), px(y + 29));
+  ctx.fillText('Origin:  ' + s.origin,       px(col1x + 4), px(y + 36));
 
-  doc.setFillColor(240, 249, 255);
-  doc.roundedRect(col2x, y, colW, 46, 2, 2, 'F');
-  doc.setDrawColor(14, 165, 233);
-  doc.roundedRect(col2x, y, colW, 46, 2, 2, 'S');
-  doc.setTextColor(10, 31, 61);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  doc.text('RECEIVER INFORMATION', col2x + 4, y + 7);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.2);
-  doc.setTextColor(30, 50, 80);
-  doc.text('Name:    ' + s.receiverName,  col2x + 4, y + 15);
-  doc.text('Phone:   ' + s.receiverPhone, col2x + 4, y + 22);
-  doc.text('Email:   ' + s.receiverEmail, col2x + 4, y + 29);
-  doc.text('Dest:    ' + s.destination,    col2x + 4, y + 36);
+  // receiver box
+  fillRR(ctx, px(col2x), px(y), px(colW), px(46), px(2), 'rgb(240,249,255)');
+  strokeRR(ctx, px(col2x), px(y), px(colW), px(46), px(2), 'rgb(14,165,233)', px(0.4));
+  ctx.fillStyle = 'rgb(10,31,61)';
+  ctx.font = `bold ${FS(8)}px ${FONT}`;
+  ctx.fillText('RECEIVER INFORMATION', px(col2x + 4), px(y + 7));
+  ctx.font = `${FS(8.2)}px ${FONT}`;
+  ctx.fillStyle = 'rgb(30,50,80)';
+  ctx.fillText('Name:    ' + s.receiverName,  px(col2x + 4), px(y + 15));
+  ctx.fillText('Phone:   ' + s.receiverPhone, px(col2x + 4), px(y + 22));
+  ctx.fillText('Email:   ' + s.receiverEmail, px(col2x + 4), px(y + 29));
+  ctx.fillText('Dest:    ' + s.destination,    px(col2x + 4), px(y + 36));
 
   y += 52;
 
-  doc.setFillColor(10, 31, 61);
-  doc.roundedRect(M, y, cw, 8, 2, 2, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(8.5);
-  doc.setFont('helvetica', 'bold');
-  doc.text('SHIPMENT DETAILS', M + 4, y + 5.5);
+  // shipment details header
+  fillRR(ctx, px(M), px(y), px(cw), px(8), px(2), 'rgb(10,31,61)');
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `bold ${FS(8.5)}px ${FONT}`;
+  ctx.fillText('SHIPMENT DETAILS', px(M + 4), px(y + 5.5));
   y += 10;
 
   [
@@ -1345,78 +1370,87 @@ function generateInvoice(s) {
     ['Current Stage',     s.status],
     ['Special Notes',     s.notes || 'None'],
   ].forEach((row, i) => {
-    doc.setFillColor(...(i % 2 === 0 ? [248,252,255] : [255,255,255]));
-    doc.rect(M, y, cw, 8, 'F');
-    doc.setTextColor(74, 96, 128);
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.text(row[0], M + 4, y + 5.5);
-    doc.setTextColor(10, 31, 61);
-    doc.setFont('helvetica', 'bold');
-    doc.text(String(row[1]), M + 72, y + 5.5);
+    ctx.fillStyle = i % 2 === 0 ? 'rgb(248,252,255)' : 'rgb(255,255,255)';
+    ctx.fillRect(px(M), px(y), px(cw), px(8));
+    ctx.fillStyle = 'rgb(74,96,128)';
+    ctx.font = `${FS(8)}px ${FONT}`;
+    ctx.fillText(row[0], px(M + 4), px(y + 5.5));
+    ctx.fillStyle = 'rgb(10,31,61)';
+    ctx.font = `bold ${FS(8)}px ${FONT}`;
+    ctx.fillText(String(row[1]), px(M + 72), px(y + 5.5));
     y += 8;
   });
 
   y += 6;
 
   if (s.history && s.history.length > 0) {
-    doc.setFillColor(10, 31, 61);
-    doc.roundedRect(M, y, cw, 8, 2, 2, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(8.5);
-    doc.setFont('helvetica', 'bold');
-    doc.text('TRACKING TIMELINE', M + 4, y + 5.5);
+    fillRR(ctx, px(M), px(y), px(cw), px(8), px(2), 'rgb(10,31,61)');
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold ${FS(8.5)}px ${FONT}`;
+    ctx.fillText('TRACKING TIMELINE', px(M + 4), px(y + 5.5));
     y += 10;
     const curIdx = STAGES.indexOf(s.status);
     STAGES.forEach((stage, i) => {
       const done = curIdx >= 0 && i <= curIdx;
-      doc.setFillColor(...(i % 2 === 0 ? [240,249,255] : [255,255,255]));
-      doc.rect(M, y, cw, 7, 'F');
-      doc.setTextColor(...(done ? [14,165,233] : [180,190,205]));
-      doc.setFontSize(8);
-      doc.setFont('helvetica', done ? 'bold' : 'normal');
-      doc.text((done ? '✓ ' : '○ ') + stage, M + 4, y + 5);
+      ctx.fillStyle = i % 2 === 0 ? 'rgb(240,249,255)' : 'rgb(255,255,255)';
+      ctx.fillRect(px(M), px(y), px(cw), px(7));
+      ctx.fillStyle = done ? 'rgb(14,165,233)' : 'rgb(180,190,205)';
+      ctx.font = `${done ? 'bold ' : ''}${FS(8)}px ${FONT}`;
+      ctx.fillText((done ? '✓ ' : '○ ') + stage, px(M + 4), px(y + 5));
       y += 7;
     });
     y += 4;
   }
 
-  if (y > 250) { doc.addPage(); y = 20; }
-
   const isDelivered = s.status === 'Delivered';
   const isTransit   = !isDelivered && s.status !== 'Shipment Created';
-  doc.setFillColor(...(isDelivered ? [26,163,122] : isTransit ? [10,31,61] : [74,96,128]));
-  doc.roundedRect(M, y, cw, 13, 3, 3, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
-  doc.text('CURRENT STAGE: ' + s.status.toUpperCase(), W / 2, y + 8.5, { align: 'center' });
+  const bannerColor = isDelivered ? 'rgb(26,163,122)' : isTransit ? 'rgb(10,31,61)' : 'rgb(74,96,128)';
+  fillRR(ctx, px(M), px(y), px(cw), px(13), px(3), bannerColor);
+  ctx.fillStyle = '#ffffff';
+  ctx.textAlign = 'center';
+  ctx.font = `bold ${FS(10)}px ${FONT}`;
+  ctx.fillText('CURRENT STAGE: ' + s.status.toUpperCase(), px(W / 2), px(y + 8.5));
   y += 19;
 
-  doc.setDrawColor(176, 207, 234);
-  doc.setLineWidth(0.3);
-  doc.line(M, y, W - M, y);
+  ctx.strokeStyle = 'rgb(176,207,234)';
+  ctx.lineWidth = px(0.3);
+  ctx.beginPath();
+  ctx.moveTo(px(M), px(y));
+  ctx.lineTo(px(W - M), px(y));
+  ctx.stroke();
   y += 6;
-  doc.setTextColor(74, 96, 128);
-  doc.setFontSize(7.5);
-  doc.setFont('helvetica', 'normal');
-  doc.text('Track this shipment online: ' + buildTrackLink(s.id), W / 2, y, { align: 'center' });
+  ctx.fillStyle = 'rgb(74,96,128)';
+  ctx.font = `${FS(7.5)}px ${FONT}`;
+  ctx.textAlign = 'center';
+  ctx.fillText('Track this shipment online: ' + buildTrackLink(s.id), px(W / 2), px(y));
   y += 5;
-  doc.text('Generated by Swift Express Delivery Company Admin Portal · ' + new Date().toLocaleString(), W / 2, y, { align: 'center' });
+  ctx.fillText('Generated by Swift Express Delivery Company Admin Portal · ' + new Date().toLocaleString(), px(W / 2), px(y));
   y += 5;
-  doc.text('For tracking enquiries: info.guaranteeshipping@gmail.com · This is an official shipping invoice.', W / 2, y, { align: 'center' });
+  ctx.fillText('For tracking enquiries: info.guaranteeshipping@gmail.com · This is an official shipping invoice.', px(W / 2), px(y));
 
   if (isDelivered) {
-    doc.setTextColor(26, 163, 122);
-    doc.setFontSize(44);
-    doc.setFont('helvetica', 'bold');
-    doc.setGState(new doc.GState({ opacity: 0.07 }));
-    doc.text('DELIVERED', W / 2, 190, { align: 'center', angle: 35 });
-    doc.setGState(new doc.GState({ opacity: 1 }));
+    ctx.save();
+    ctx.globalAlpha = 0.07;
+    ctx.fillStyle = 'rgb(26,163,122)';
+    ctx.font = `bold ${FS(44)}px ${FONT}`;
+    ctx.textAlign = 'center';
+    ctx.translate(px(W / 2), px(190));
+    ctx.rotate(-35 * Math.PI / 180);
+    ctx.fillText('DELIVERED', 0, 0);
+    ctx.restore();
   }
 
-  doc.save('SwiftExpress-Invoice-' + s.id + '.pdf');
-  showToast('Invoice downloaded ✓', 'success');
+  canvas.toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'SwiftExpress-Invoice-' + s.id + '.jpg';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Invoice downloaded ✓', 'success');
+  }, 'image/jpeg', 0.92);
 }
 
 function esc(str) {
