@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Swift Express Delivery Company — Admin</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:wght@600;700;900&family=Cormorant+Garamond:ital,wght@0,500;1,500&display=swap" rel="stylesheet">
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <style>
 :root{
@@ -1232,8 +1232,10 @@ function renderReports() {
       <div class="num">${v}</div></div>`).join('') || '<div class="placeholder-note">No data yet.</div>';
 }
 
+
 // ═══════════════════════════════════════════════════
-// INVOICE JPG (rendered on a canvas, downloaded as .jpg)
+// INVOICE JPG — luxury certificate style (gold/navy, wax seal, flags)
+// rendered on a canvas, downloaded as .jpg — always a single page
 // ═══════════════════════════════════════════════════
 function rrPath(ctx, x, y, w, h, r) {
   ctx.beginPath();
@@ -1256,105 +1258,245 @@ function strokeRR(ctx, x, y, w, h, r, color, lineWidth) {
   ctx.stroke();
 }
 
-function generateInvoice(s) {
+// ---- country name -> ISO alpha-2 code, used to pull a flag image ----
+const COUNTRY_CODES = {
+  'nigeria':'ng','united states':'us','united states of america':'us','usa':'us','u.s.a':'us','us':'us',
+  'united kingdom':'gb','uk':'gb','u.k':'gb','england':'gb','scotland':'gb','wales':'gb','great britain':'gb',
+  'canada':'ca','australia':'au','germany':'de','france':'fr','italy':'it','spain':'es','portugal':'pt',
+  'netherlands':'nl','belgium':'be','switzerland':'ch','austria':'at','sweden':'se','norway':'no','denmark':'dk',
+  'finland':'fi','ireland':'ie','poland':'pl','greece':'gr','turkey':'tr','russia':'ru','ukraine':'ua',
+  'china':'cn','japan':'jp','south korea':'kr','korea':'kr','india':'in','pakistan':'pk','bangladesh':'bd',
+  'indonesia':'id','malaysia':'my','singapore':'sg','thailand':'th','vietnam':'vn','philippines':'ph',
+  'united arab emirates':'ae','uae':'ae','saudi arabia':'sa','qatar':'qa','kuwait':'kw','israel':'il','egypt':'eg',
+  'south africa':'za','kenya':'ke','ghana':'gh','ethiopia':'et','tanzania':'tz','uganda':'ug','morocco':'ma',
+  'algeria':'dz','tunisia':'tn','cameroon':'cm','senegal':'sn','ivory coast':'ci','cote d\'ivoire':'ci',
+  'zambia':'zm','zimbabwe':'zw','rwanda':'rw','brazil':'br','argentina':'ar','chile':'cl','colombia':'co',
+  'peru':'pe','mexico':'mx','venezuela':'ve','new zealand':'nz','czech republic':'cz','czechia':'cz',
+  'hungary':'hu','romania':'ro','bulgaria':'bg','croatia':'hr','serbia':'rs','iceland':'is','luxembourg':'lu',
+  'hong kong':'hk','taiwan':'tw','sri lanka':'lk','nepal':'np','myanmar':'mm','cambodia':'kh','jordan':'jo',
+  'lebanon':'lb','oman':'om','bahrain':'bh','iraq':'iq','iran':'ir','cyprus':'cy','malta':'mt',
+};
+function getCountryCode(location) {
+  if (!location) return null;
+  const parts = String(location).split(',').map(p => p.trim()).filter(Boolean);
+  const last = (parts[parts.length - 1] || '').toLowerCase().replace(/\./g, '').trim();
+  return COUNTRY_CODES[last] || null;
+}
+function loadFlagImage(code) {
+  return new Promise(resolve => {
+    if (!code) { resolve(null); return; }
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = `https://flagcdn.com/w160/${code}.png`;
+  });
+}
+async function ensureLuxuryFonts() {
+  try {
+    await Promise.all([
+      document.fonts.load("700 20px 'Playfair Display'"),
+      document.fonts.load("900 20px 'Playfair Display'"),
+      document.fonts.load("italic 500 20px 'Cormorant Garamond'"),
+    ]);
+  } catch (e) { /* fonts unavailable offline — canvas falls back to serif */ }
+}
+
+// draws text curved along a circular arc — used for the wax-seal stamp
+function drawArcText(ctx, text, cx, cy, radius, startAngle, endAngle, font, color) {
+  ctx.save();
+  ctx.font = font;
+  ctx.fillStyle = color;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const n = text.length;
+  for (let i = 0; i < n; i++) {
+    const t = n === 1 ? 0.5 : i / (n - 1);
+    const angle = startAngle + (endAngle - startAngle) * t;
+    const x = cx + radius * Math.cos(angle);
+    const y = cy + radius * Math.sin(angle);
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle + Math.PI / 2);
+    ctx.fillText(text[i], 0, 0);
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+// small gold flourish glyph used for corner ornaments / dividers
+function drawFlourish(ctx, x, y, size, color) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = size * 0.09;
+  ctx.beginPath();
+  ctx.moveTo(x - size, y);
+  ctx.lineTo(x + size, y);
+  ctx.moveTo(x, y - size);
+  ctx.lineTo(x, y + size);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(x, y, size * 0.28, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function computeInvoiceHeight(s) {
+  let y = 73;
+  y += 52;               // sender/receiver boxes
+  y += 10;                // shipment details header
+  y += 10 * 8;            // 10 fixed detail rows
+  y += 6;
+  if (s.history && s.history.length > 0) {
+    y += 10;              // timeline header
+    y += STAGES.length * 7;
+    y += 4;
+  }
+  y += 19;                // current-stage banner
+  y += 4 + 24 + 4;         // destination plaque (flag + country name) + gaps
+  y += 6 + 5 + 5 + 5;      // footer divider + 3 footer lines
+  y += 14;                 // bottom breathing room
+  return y;
+}
+
+async function generateInvoice(s) {
+  showToast('Preparing invoice…', 'info');
+  await ensureLuxuryFonts();
+  const originCode = getCountryCode(s.origin);
+  const destCode    = getCountryCode(s.destination);
+  const [originFlag, destFlag] = await Promise.all([loadFlagImage(originCode), loadFlagImage(destCode)]);
+
   const SCALE = 4; // px per "mm" — bump this up for a higher-resolution JPG
-  const W = 210, M = 18, cw = W - M * 2, H = 320;
+  const W = 210, M = 18, cw = W - M * 2;
+  const H = computeInvoiceHeight(s); // dynamic height so content always fits on one single-page image
   const px = mm => mm * SCALE;
-  const FS = pt => pt * 0.3528 * SCALE; // pt (as used in the old layout) -> px
+  const FS = pt => pt * 0.3528 * SCALE; // pt -> px
+  const SERIF = "'Playfair Display', Georgia, 'Times New Roman', serif";
+  const SCRIPT = "'Cormorant Garamond', Georgia, serif";
+  const GOLD = 'rgb(176,141,60)';
+  const GOLD_DK = 'rgb(133,103,38)';
+  const NAVY = 'rgb(8,18,34)';
+  const INK = 'rgb(20,32,52)';
+  const IVORY = 'rgb(250,247,239)';
 
   const canvas = document.createElement('canvas');
   canvas.width = px(W);
   canvas.height = px(H);
   const ctx = canvas.getContext('2d');
-  const FONT = 'Helvetica, Arial, sans-serif';
   ctx.textBaseline = 'alphabetic';
 
-  // white background (JPG has no transparency)
-  ctx.fillStyle = '#ffffff';
+  // ivory "certificate" paper background
+  ctx.fillStyle = IVORY;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // watermark
+  // SE logo watermark — large, faint gold, centered behind all content
   ctx.save();
-  ctx.globalAlpha = 0.045;
-  ctx.fillStyle = 'rgb(14,165,233)';
-  ctx.font = `bold ${FS(110)}px ${FONT}`;
+  ctx.globalAlpha = 0.07;
+  ctx.fillStyle = GOLD_DK;
+  ctx.font = `900 ${FS(130)}px ${SERIF}`;
   ctx.textAlign = 'center';
-  ctx.fillText('SE', px(W / 2), px(148));
+  ctx.translate(px(W / 2), px(H / 2));
+  ctx.rotate(-20 * Math.PI / 180);
+  ctx.fillText('SE', 0, 0);
   ctx.restore();
 
-  // header
-  ctx.fillStyle = 'rgb(10,31,61)';
+  // header — deep navy with gold foil trim
+  ctx.fillStyle = NAVY;
   ctx.fillRect(0, 0, px(W), px(46));
-  ctx.fillStyle = 'rgb(26,63,114)';
-  ctx.fillRect(0, px(40), px(W), px(6));
+  ctx.fillStyle = GOLD;
+  ctx.fillRect(0, px(43.5), px(W), px(1.4));
+  ctx.fillRect(0, px(45.4), px(W), px(0.5));
 
-  fillRR(ctx, px(M), px(7), px(20), px(20), px(3), 'rgb(14,165,233)');
-  ctx.fillStyle = '#ffffff';
-  ctx.font = `bold ${FS(11)}px ${FONT}`;
+  // gold-ringed crest with initials
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(px(M + 10), px(20), px(10.5), 0, Math.PI * 2);
+  ctx.strokeStyle = GOLD; ctx.lineWidth = px(0.8); ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(px(M + 10), px(20), px(8.3), 0, Math.PI * 2);
+  ctx.fillStyle = NAVY; ctx.fill();
+  ctx.strokeStyle = GOLD; ctx.lineWidth = px(0.35); ctx.stroke();
+  ctx.fillStyle = GOLD;
   ctx.textAlign = 'center';
-  ctx.fillText('SE', px(M + 10), px(20));
+  ctx.font = `700 ${FS(11)}px ${SERIF}`;
+  ctx.fillText('SE', px(M + 10), px(23.2));
+  ctx.restore();
 
   ctx.textAlign = 'left';
-  ctx.fillStyle = '#ffffff';
-  ctx.font = `bold ${FS(18)}px ${FONT}`;
-  ctx.fillText('Swift Express Delivery', px(M + 24), px(16));
-  ctx.font = `${FS(8.5)}px ${FONT}`;
-  ctx.fillStyle = 'rgb(180,210,240)';
-  ctx.fillText('Reliable · Fast · Global  ·  info.guaranteeshipping@gmail.com  ·  +1 62 SE-SHIPS', px(M + 24), px(23));
-  ctx.fillText('506 S Spring St #13308, Los Angeles, CA 90013, USA', px(M + 24), px(29));
+  ctx.fillStyle = GOLD;
+  ctx.font = `700 ${FS(19)}px ${SERIF}`;
+  ctx.fillText('Swift Express Delivery', px(M + 25), px(17));
+  ctx.font = `italic 500 ${FS(9)}px ${SCRIPT}`;
+  ctx.fillStyle = 'rgb(214,197,150)';
+  ctx.fillText('Reliable · Fast · Global  ·  info.guaranteeshipping@gmail.com  ·  +1 62 SE-SHIPS', px(M + 25), px(24));
+  ctx.fillText('506 S Spring St #13308, Los Angeles, CA 90013, USA', px(M + 25), px(30));
 
   ctx.textAlign = 'right';
-  ctx.fillStyle = '#ffffff';
-  ctx.font = `bold ${FS(14)}px ${FONT}`;
+  ctx.fillStyle = GOLD;
+  ctx.font = `700 ${FS(14)}px ${SERIF}`;
   ctx.fillText('SHIPPING INVOICE', px(W - M), px(16));
-  ctx.font = `${FS(8)}px ${FONT}`;
-  ctx.fillStyle = 'rgb(180,210,240)';
-  ctx.fillText('Official Document', px(W - M), px(23));
+  ctx.font = `italic 500 ${FS(8.5)}px ${SCRIPT}`;
+  ctx.fillStyle = 'rgb(214,197,150)';
+  ctx.fillText('Premium Service · Official Document', px(W - M), px(23));
   ctx.fillText('Issued: ' + new Date().toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}), px(W - M), px(29));
 
   // tracking id bar
-  fillRR(ctx, px(M), px(52), px(cw), px(13), px(3), 'rgb(14,165,233)');
-  ctx.fillStyle = '#ffffff';
+  fillRR(ctx, px(M), px(52), px(cw), px(13), px(2), NAVY);
+  strokeRR(ctx, px(M), px(52), px(cw), px(13), px(2), GOLD, px(0.6));
+  ctx.fillStyle = GOLD;
   ctx.textAlign = 'center';
-  ctx.font = `bold ${FS(12)}px ${FONT}`;
-  ctx.fillText('TRACKING ID: ' + s.id, px(W / 2), px(60.5));
+  ctx.font = `700 ${FS(12)}px ${SERIF}`;
+  ctx.fillText('TRACKING ID   ·   ' + s.id, px(W / 2), px(60.5));
 
   let y = 73;
   const col1x = M, col2x = W / 2 + 3, colW = (cw / 2) - 3;
 
+  function drawFlagChip(img, x, y, w, h) {
+    if (!img) return;
+    ctx.save();
+    strokeRR(ctx, px(x), px(y), px(w), px(h), px(0.6), GOLD_DK, px(0.35));
+    rrPath(ctx, px(x), px(y), px(w), px(h), px(0.6));
+    ctx.clip();
+    ctx.drawImage(img, px(x), px(y), px(w), px(h));
+    ctx.restore();
+  }
+
   // sender box
-  fillRR(ctx, px(col1x), px(y), px(colW), px(46), px(2), 'rgb(224,242,254)');
-  strokeRR(ctx, px(col1x), px(y), px(colW), px(46), px(2), 'rgb(26,63,114)', px(0.4));
+  fillRR(ctx, px(col1x), px(y), px(colW), px(46), px(2), 'rgb(255,255,255)');
+  strokeRR(ctx, px(col1x), px(y), px(colW), px(46), px(2), GOLD_DK, px(0.5));
   ctx.textAlign = 'left';
-  ctx.fillStyle = 'rgb(10,31,61)';
-  ctx.font = `bold ${FS(8)}px ${FONT}`;
+  ctx.fillStyle = NAVY;
+  ctx.font = `700 ${FS(8)}px ${SERIF}`;
   ctx.fillText('SENDER INFORMATION', px(col1x + 4), px(y + 7));
-  ctx.font = `${FS(8.2)}px ${FONT}`;
-  ctx.fillStyle = 'rgb(30,50,80)';
-  ctx.fillText('Name:    ' + s.senderName,  px(col1x + 4), px(y + 15));
-  ctx.fillText('Phone:   ' + s.senderPhone, px(col1x + 4), px(y + 22));
-  ctx.fillText('Email:   ' + s.senderEmail, px(col1x + 4), px(y + 29));
-  ctx.fillText('Origin:  ' + s.origin,       px(col1x + 4), px(y + 36));
+  drawFlagChip(originFlag, col1x + colW - 15, y + 3, 11, 7);
+  ctx.font = `${FS(8.2)}px Helvetica, Arial, sans-serif`;
+  ctx.fillStyle = INK;
+  ctx.fillText('Name:    ' + s.senderName,  px(col1x + 4), px(y + 16));
+  ctx.fillText('Phone:   ' + s.senderPhone, px(col1x + 4), px(y + 23));
+  ctx.fillText('Email:   ' + s.senderEmail, px(col1x + 4), px(y + 30));
+  ctx.fillText('Origin:  ' + s.origin,       px(col1x + 4), px(y + 37));
 
   // receiver box
-  fillRR(ctx, px(col2x), px(y), px(colW), px(46), px(2), 'rgb(240,249,255)');
-  strokeRR(ctx, px(col2x), px(y), px(colW), px(46), px(2), 'rgb(14,165,233)', px(0.4));
-  ctx.fillStyle = 'rgb(10,31,61)';
-  ctx.font = `bold ${FS(8)}px ${FONT}`;
+  fillRR(ctx, px(col2x), px(y), px(colW), px(46), px(2), 'rgb(255,255,255)');
+  strokeRR(ctx, px(col2x), px(y), px(colW), px(46), px(2), GOLD, px(0.6));
+  ctx.fillStyle = NAVY;
+  ctx.font = `700 ${FS(8)}px ${SERIF}`;
   ctx.fillText('RECEIVER INFORMATION', px(col2x + 4), px(y + 7));
-  ctx.font = `${FS(8.2)}px ${FONT}`;
-  ctx.fillStyle = 'rgb(30,50,80)';
-  ctx.fillText('Name:    ' + s.receiverName,  px(col2x + 4), px(y + 15));
-  ctx.fillText('Phone:   ' + s.receiverPhone, px(col2x + 4), px(y + 22));
-  ctx.fillText('Email:   ' + s.receiverEmail, px(col2x + 4), px(y + 29));
-  ctx.fillText('Dest:    ' + s.destination,    px(col2x + 4), px(y + 36));
+  drawFlagChip(destFlag, col2x + colW - 15, y + 3, 11, 7);
+  ctx.font = `${FS(8.2)}px Helvetica, Arial, sans-serif`;
+  ctx.fillStyle = INK;
+  ctx.fillText('Name:    ' + s.receiverName,  px(col2x + 4), px(y + 16));
+  ctx.fillText('Phone:   ' + s.receiverPhone, px(col2x + 4), px(y + 23));
+  ctx.fillText('Email:   ' + s.receiverEmail, px(col2x + 4), px(y + 30));
+  ctx.fillText('Dest:    ' + s.destination,    px(col2x + 4), px(y + 37));
 
   y += 52;
 
   // shipment details header
-  fillRR(ctx, px(M), px(y), px(cw), px(8), px(2), 'rgb(10,31,61)');
-  ctx.fillStyle = '#ffffff';
-  ctx.font = `bold ${FS(8.5)}px ${FONT}`;
+  fillRR(ctx, px(M), px(y), px(cw), px(8), px(2), NAVY);
+  ctx.fillStyle = GOLD;
+  ctx.font = `700 ${FS(8.5)}px ${SERIF}`;
   ctx.fillText('SHIPMENT DETAILS', px(M + 4), px(y + 5.5));
   y += 10;
 
@@ -1370,13 +1512,13 @@ function generateInvoice(s) {
     ['Current Stage',     s.status],
     ['Special Notes',     s.notes || 'None'],
   ].forEach((row, i) => {
-    ctx.fillStyle = i % 2 === 0 ? 'rgb(248,252,255)' : 'rgb(255,255,255)';
+    ctx.fillStyle = i % 2 === 0 ? 'rgb(247,241,226)' : 'rgb(255,255,255)';
     ctx.fillRect(px(M), px(y), px(cw), px(8));
-    ctx.fillStyle = 'rgb(74,96,128)';
-    ctx.font = `${FS(8)}px ${FONT}`;
+    ctx.fillStyle = GOLD_DK;
+    ctx.font = `${FS(8)}px Helvetica, Arial, sans-serif`;
     ctx.fillText(row[0], px(M + 4), px(y + 5.5));
-    ctx.fillStyle = 'rgb(10,31,61)';
-    ctx.font = `bold ${FS(8)}px ${FONT}`;
+    ctx.fillStyle = NAVY;
+    ctx.font = `bold ${FS(8)}px Helvetica, Arial, sans-serif`;
     ctx.fillText(String(row[1]), px(M + 72), px(y + 5.5));
     y += 8;
   });
@@ -1384,18 +1526,18 @@ function generateInvoice(s) {
   y += 6;
 
   if (s.history && s.history.length > 0) {
-    fillRR(ctx, px(M), px(y), px(cw), px(8), px(2), 'rgb(10,31,61)');
-    ctx.fillStyle = '#ffffff';
-    ctx.font = `bold ${FS(8.5)}px ${FONT}`;
+    fillRR(ctx, px(M), px(y), px(cw), px(8), px(2), NAVY);
+    ctx.fillStyle = GOLD;
+    ctx.font = `700 ${FS(8.5)}px ${SERIF}`;
     ctx.fillText('TRACKING TIMELINE', px(M + 4), px(y + 5.5));
     y += 10;
     const curIdx = STAGES.indexOf(s.status);
     STAGES.forEach((stage, i) => {
       const done = curIdx >= 0 && i <= curIdx;
-      ctx.fillStyle = i % 2 === 0 ? 'rgb(240,249,255)' : 'rgb(255,255,255)';
+      ctx.fillStyle = i % 2 === 0 ? 'rgb(247,241,226)' : 'rgb(255,255,255)';
       ctx.fillRect(px(M), px(y), px(cw), px(7));
-      ctx.fillStyle = done ? 'rgb(14,165,233)' : 'rgb(180,190,205)';
-      ctx.font = `${done ? 'bold ' : ''}${FS(8)}px ${FONT}`;
+      ctx.fillStyle = done ? GOLD_DK : 'rgb(180,175,160)';
+      ctx.font = `${done ? 'bold ' : ''}${FS(8)}px Helvetica, Arial, sans-serif`;
       ctx.fillText((done ? '✓ ' : '○ ') + stage, px(M + 4), px(y + 5));
       y += 7;
     });
@@ -1404,23 +1546,37 @@ function generateInvoice(s) {
 
   const isDelivered = s.status === 'Delivered';
   const isTransit   = !isDelivered && s.status !== 'Shipment Created';
-  const bannerColor = isDelivered ? 'rgb(26,163,122)' : isTransit ? 'rgb(10,31,61)' : 'rgb(74,96,128)';
-  fillRR(ctx, px(M), px(y), px(cw), px(13), px(3), bannerColor);
-  ctx.fillStyle = '#ffffff';
+  const bannerColor = isDelivered ? 'rgb(26,110,80)' : isTransit ? NAVY : 'rgb(90,80,60)';
+  fillRR(ctx, px(M), px(y), px(cw), px(13), px(2), bannerColor);
+  strokeRR(ctx, px(M), px(y), px(cw), px(13), px(2), GOLD, px(0.5));
+  ctx.fillStyle = GOLD;
   ctx.textAlign = 'center';
-  ctx.font = `bold ${FS(10)}px ${FONT}`;
+  ctx.font = `700 ${FS(10)}px ${SERIF}`;
   ctx.fillText('CURRENT STAGE: ' + s.status.toUpperCase(), px(W / 2), px(y + 8.5));
   y += 19;
 
-  ctx.strokeStyle = 'rgb(176,207,234)';
+  // destination plaque — big flag + country/city name, framed in gold
+  fillRR(ctx, px(M), px(y), px(cw), px(24), px(2), 'rgb(255,255,255)');
+  strokeRR(ctx, px(M), px(y), px(cw), px(24), px(2), GOLD, px(0.6));
+  drawFlagChip(destFlag, M + 5, y + 4, 24, 16);
+  ctx.textAlign = 'left';
+  ctx.fillStyle = GOLD_DK;
+  ctx.font = `italic 500 ${FS(7.5)}px ${SCRIPT}`;
+  ctx.fillText('SHIPPING TO', px(M + 34), px(y + 9));
+  ctx.fillStyle = NAVY;
+  ctx.font = `700 ${FS(13)}px ${SERIF}`;
+  ctx.fillText(s.destination, px(M + 34), px(y + 18));
+  y += 24 + 4;
+
+  ctx.strokeStyle = GOLD_DK;
   ctx.lineWidth = px(0.3);
   ctx.beginPath();
   ctx.moveTo(px(M), px(y));
   ctx.lineTo(px(W - M), px(y));
   ctx.stroke();
   y += 6;
-  ctx.fillStyle = 'rgb(74,96,128)';
-  ctx.font = `${FS(7.5)}px ${FONT}`;
+  ctx.fillStyle = 'rgb(100,90,65)';
+  ctx.font = `${FS(7.5)}px Helvetica, Arial, sans-serif`;
   ctx.textAlign = 'center';
   ctx.fillText('Track this shipment online: ' + buildTrackLink(s.id), px(W / 2), px(y));
   y += 5;
@@ -1430,15 +1586,49 @@ function generateInvoice(s) {
 
   if (isDelivered) {
     ctx.save();
-    ctx.globalAlpha = 0.07;
-    ctx.fillStyle = 'rgb(26,163,122)';
-    ctx.font = `bold ${FS(44)}px ${FONT}`;
+    ctx.globalAlpha = 0.08;
+    ctx.fillStyle = 'rgb(26,110,80)';
+    ctx.font = `900 ${FS(40)}px ${SERIF}`;
     ctx.textAlign = 'center';
-    ctx.translate(px(W / 2), px(190));
+    ctx.translate(px(W / 2), px(H * 0.6));
     ctx.rotate(-35 * Math.PI / 180);
     ctx.fillText('DELIVERED', 0, 0);
     ctx.restore();
   }
+
+  // ---- official wax-seal stamp, bottom-right ----
+  (function drawStamp() {
+    const cx = px(W - M - 24), cy = px(y - 4), r = px(20);
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(-14 * Math.PI / 180);
+    ctx.globalAlpha = 0.85;
+    const INKCOLOR = 'rgb(148,26,34)';
+    ctx.strokeStyle = INKCOLOR;
+    ctx.fillStyle = INKCOLOR;
+    ctx.lineWidth = px(0.9);
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.stroke();
+    ctx.lineWidth = px(0.35);
+    ctx.beginPath(); ctx.arc(0, 0, r - px(2.6), 0, Math.PI * 2); ctx.stroke();
+    drawArcText(ctx, 'SWIFT EXPRESS DELIVERY', 0, 0, r - px(5.5), -Math.PI * 0.95, -Math.PI * 0.05,
+      `700 ${FS(4.6)}px ${SERIF}`, INKCOLOR);
+    drawArcText(ctx, '★ AUTHENTICATED · CERTIFIED ★', 0, 0, r - px(5.5), Math.PI * 0.05, Math.PI * 0.95,
+      `700 ${FS(4.3)}px ${SERIF}`, INKCOLOR);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = `700 ${FS(7.5)}px ${SERIF}`;
+    ctx.fillText('OFFICIAL', 0, -px(3));
+    ctx.font = `italic 500 ${FS(5)}px ${SCRIPT}`;
+    ctx.fillText(new Date().toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}), 0, px(4));
+    ctx.restore();
+  })();
+
+  // outer gold certificate border frame
+  ctx.save();
+  strokeRR(ctx, px(4), px(4), px(W - 8), px(H - 8), px(2), GOLD, px(0.9));
+  strokeRR(ctx, px(6), px(6), px(W - 12), px(H - 12), px(1), GOLD_DK, px(0.3));
+  ctx.restore();
+  [[8,8],[W-8,8],[8,H-8],[W-8,H-8]].forEach(([fx,fy]) => drawFlourish(ctx, px(fx), px(fy), px(2.2), GOLD));
 
   canvas.toBlob(blob => {
     const url = URL.createObjectURL(blob);
@@ -1450,7 +1640,7 @@ function generateInvoice(s) {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     showToast('Invoice downloaded ✓', 'success');
-  }, 'image/jpeg', 0.92);
+  }, 'image/jpeg', 0.94);
 }
 
 function esc(str) {
