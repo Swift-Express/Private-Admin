@@ -167,6 +167,29 @@ main{flex:1;max-width:1300px;width:100%;margin:0 auto;padding:26px 24px 60px;}
 .detail-row .v{font-weight:600;text-align:right;max-width:60%;color:var(--ink-dark);}
 .actions-row{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;}
 .placeholder-note{color:var(--slate);font-size:0.9rem;text-align:center;padding:30px 0;}
+/* ===== INVOICE PREVIEW MODAL ===== */
+.invoice-modal-overlay{position:fixed;inset:0;background:rgba(8,18,34,0.72);
+  display:none;align-items:center;justify-content:center;z-index:200;padding:24px;
+  backdrop-filter:blur(2px);}
+.invoice-modal-overlay.show{display:flex;}
+.invoice-modal{background:#fff;border-radius:16px;max-width:900px;width:100%;
+  max-height:92vh;display:flex;flex-direction:column;overflow:hidden;
+  box-shadow:0 30px 80px rgba(0,0,0,0.45);}
+.invoice-modal-head{background:linear-gradient(120deg,var(--ink-dark),var(--ink-mid));
+  color:#fff;padding:16px 22px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.invoice-modal-head h3{font-size:1.05rem;font-family:'Space Grotesk',sans-serif;}
+.invoice-modal-head .sub{font-size:0.78rem;color:var(--sky-light);margin-top:2px;}
+.invoice-modal-actions{display:flex;gap:8px;align-items:center;}
+.invoice-modal-close{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);
+  color:#fff;border-radius:8px;width:34px;height:34px;font-size:1rem;cursor:pointer;line-height:1;}
+.invoice-modal-close:hover{background:rgba(255,255,255,0.22);}
+.invoice-modal-body{flex:1;overflow:auto;background:var(--sky-light);
+  display:flex;align-items:flex-start;justify-content:center;padding:22px;}
+.invoice-modal-body img{max-width:100%;height:auto;border-radius:6px;
+  box-shadow:0 10px 30px rgba(8,18,34,0.25);background:#fff;}
+.invoice-modal-loading{color:var(--ink);font-family:'Space Grotesk',sans-serif;
+  font-weight:600;padding:60px 20px;text-align:center;}
+
 .toast{position:fixed;bottom:24px;right:24px;background:var(--ink-dark);color:#fff;
   padding:14px 20px;border-radius:10px;font-size:0.88rem;font-weight:500;
   box-shadow:0 8px 24px rgba(0,0,0,0.25);z-index:9999;max-width:320px;
@@ -424,6 +447,7 @@ main{flex:1;max-width:1300px;width:100%;margin:0 auto;padding:26px 24px 60px;}
               </div>
               <div class="actions-row">
                 <button class="btn btn-primary" onclick="addLocationUpdate()">Update Stage</button>
+                <button class="btn btn-outline" onclick="viewInvoice()">👁 View Invoice</button>
                 <button class="btn btn-green" onclick="downloadInvoice()">⬇ Download Invoice</button>
                 <button class="btn btn-outline" onclick="resendEmail()">📧 Resend Email</button>
                 <button class="btn btn-danger" onclick="deleteShipment()">🗑 Delete</button>
@@ -536,6 +560,7 @@ main{flex:1;max-width:1300px;width:100%;margin:0 auto;padding:26px 24px 60px;}
                 </div>
                 <div class="track-link-actions">
                   <button class="copy-btn alt" onclick="openTrackLink()">↗ Open Tracking Page</button>
+                  <button class="copy-btn ghost" onclick="viewLastInvoice()">👁 View Invoice</button>
                   <button class="copy-btn" onclick="downloadLastInvoice()">⬇ Download Invoice</button>
                   <button class="copy-btn ghost" onclick="copyNewId()">Copy ID Only</button>
                 </div>
@@ -636,6 +661,25 @@ main{flex:1;max-width:1300px;width:100%;margin:0 auto;padding:26px 24px 60px;}
 
 <div class="toast" id="toast"></div>
 
+<!-- INVOICE PREVIEW MODAL -->
+<div class="invoice-modal-overlay" id="invoiceModalOverlay" onclick="if(event.target===this) closeInvoiceModal()">
+  <div class="invoice-modal">
+    <div class="invoice-modal-head">
+      <div>
+        <h3>📄 Invoice Preview</h3>
+        <div class="sub" id="invoiceModalSub">—</div>
+      </div>
+      <div class="invoice-modal-actions">
+        <button class="copy-btn alt" id="invoiceModalDownload" onclick="downloadInvoiceFromModal()">⬇ Download</button>
+        <button class="invoice-modal-close" onclick="closeInvoiceModal()" aria-label="Close">✕</button>
+      </div>
+    </div>
+    <div class="invoice-modal-body" id="invoiceModalBody">
+      <div class="invoice-modal-loading">Preparing invoice…</div>
+    </div>
+  </div>
+</div>
+
 <script>
 // ═══════════════════════════════════════════════════
 // CONFIG — CREDENTIALS
@@ -716,6 +760,7 @@ function showAdmin() {
   loadShipments();
 }
 document.getElementById('password').addEventListener('keydown', e => { if(e.key==='Enter') login(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeInvoiceModal(); });
 if (sessionStorage.getItem(SESSION_KEY) === '1') showAdmin();
 
 function changePassword() {
@@ -1113,6 +1158,15 @@ function downloadInvoice() {
   const s = allShipments[selectedId];
   if (s) generateInvoice(s);
 }
+function viewLastInvoice() {
+  if (lastCreated) showInvoicePreview(lastCreated);
+  else showToast('No shipment to generate invoice for.', 'error');
+}
+function viewInvoice() {
+  const s = allShipments[selectedId];
+  if (s) showInvoicePreview(s);
+  else showToast('No shipment selected.', 'error');
+}
 
 // ═══════════════════════════════════════════════════
 // DASHBOARD / CUSTOMERS / REPORTS
@@ -1360,8 +1414,7 @@ function computeInvoiceHeight(s) {
   return y;
 }
 
-async function generateInvoice(s) {
-  showToast('Preparing invoice…', 'info');
+async function buildInvoiceCanvas(s) {
   await ensureLuxuryFonts();
   const originCode = getCountryCode(s.origin);
   const destCode    = getCountryCode(s.destination);
@@ -1374,11 +1427,16 @@ async function generateInvoice(s) {
   const FS = pt => pt * 0.3528 * SCALE; // pt -> px
   const SERIF = "'Playfair Display', Georgia, 'Times New Roman', serif";
   const SCRIPT = "'Cormorant Garamond', Georgia, serif";
-  const GOLD = 'rgb(176,141,60)';
-  const GOLD_DK = 'rgb(133,103,38)';
-  const NAVY = 'rgb(8,18,34)';
-  const INK = 'rgb(20,32,52)';
-  const IVORY = 'rgb(250,247,239)';
+  // ---- Navy / Sky-blue / White palette ----
+  const SKY = 'rgb(14,165,233)';       // accent — sky-500, used where GOLD was on dark navy
+  const SKY_DK = 'rgb(3,105,161)';     // deeper sky — sky-700, used where GOLD_DK was on white
+  const SKY_LIGHT = 'rgb(224,242,254)';// pale sky wash — alternating rows / soft fills
+  const SKY_PALE = 'rgb(186,222,247)'; // muted sky text on navy backgrounds
+  const NAVY = 'rgb(10,31,61)';
+  const INK = 'rgb(13,31,54)';
+  const WHITE = 'rgb(255,255,255)';
+  // legacy aliases so the drawing code below (originally gold/ivory) maps cleanly
+  const GOLD = SKY, GOLD_DK = SKY_DK, IVORY = WHITE;
 
   const canvas = document.createElement('canvas');
   canvas.width = px(W);
@@ -1428,7 +1486,7 @@ async function generateInvoice(s) {
   ctx.font = `700 ${FS(19)}px ${SERIF}`;
   ctx.fillText('Swift Express Delivery', px(M + 25), px(17));
   ctx.font = `italic 500 ${FS(9)}px ${SCRIPT}`;
-  ctx.fillStyle = 'rgb(214,197,150)';
+  ctx.fillStyle = SKY_PALE;
   ctx.fillText('Reliable · Fast · Global  ·  info.guaranteeshipping@gmail.com  ·  +1 62 SE-SHIPS', px(M + 25), px(24));
   ctx.fillText('506 S Spring St #13308, Los Angeles, CA 90013, USA', px(M + 25), px(30));
 
@@ -1437,7 +1495,7 @@ async function generateInvoice(s) {
   ctx.font = `700 ${FS(14)}px ${SERIF}`;
   ctx.fillText('SHIPPING INVOICE', px(W - M), px(16));
   ctx.font = `italic 500 ${FS(8.5)}px ${SCRIPT}`;
-  ctx.fillStyle = 'rgb(214,197,150)';
+  ctx.fillStyle = SKY_PALE;
   ctx.fillText('Premium Service · Official Document', px(W - M), px(23));
   ctx.fillText('Issued: ' + new Date().toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}), px(W - M), px(29));
 
@@ -1512,7 +1570,7 @@ async function generateInvoice(s) {
     ['Current Stage',     s.status],
     ['Special Notes',     s.notes || 'None'],
   ].forEach((row, i) => {
-    ctx.fillStyle = i % 2 === 0 ? 'rgb(247,241,226)' : 'rgb(255,255,255)';
+    ctx.fillStyle = i % 2 === 0 ? SKY_LIGHT : WHITE;
     ctx.fillRect(px(M), px(y), px(cw), px(8));
     ctx.fillStyle = GOLD_DK;
     ctx.font = `${FS(8)}px Helvetica, Arial, sans-serif`;
@@ -1534,9 +1592,9 @@ async function generateInvoice(s) {
     const curIdx = STAGES.indexOf(s.status);
     STAGES.forEach((stage, i) => {
       const done = curIdx >= 0 && i <= curIdx;
-      ctx.fillStyle = i % 2 === 0 ? 'rgb(247,241,226)' : 'rgb(255,255,255)';
+      ctx.fillStyle = i % 2 === 0 ? SKY_LIGHT : WHITE;
       ctx.fillRect(px(M), px(y), px(cw), px(7));
-      ctx.fillStyle = done ? GOLD_DK : 'rgb(180,175,160)';
+      ctx.fillStyle = done ? GOLD_DK : 'rgb(148,178,204)';
       ctx.font = `${done ? 'bold ' : ''}${FS(8)}px Helvetica, Arial, sans-serif`;
       ctx.fillText((done ? '✓ ' : '○ ') + stage, px(M + 4), px(y + 5));
       y += 7;
@@ -1546,7 +1604,7 @@ async function generateInvoice(s) {
 
   const isDelivered = s.status === 'Delivered';
   const isTransit   = !isDelivered && s.status !== 'Shipment Created';
-  const bannerColor = isDelivered ? 'rgb(26,110,80)' : isTransit ? NAVY : 'rgb(90,80,60)';
+  const bannerColor = isDelivered ? 'rgb(26,110,80)' : isTransit ? NAVY : SKY_DK;
   fillRR(ctx, px(M), px(y), px(cw), px(13), px(2), bannerColor);
   strokeRR(ctx, px(M), px(y), px(cw), px(13), px(2), GOLD, px(0.5));
   ctx.fillStyle = GOLD;
@@ -1575,7 +1633,7 @@ async function generateInvoice(s) {
   ctx.lineTo(px(W - M), px(y));
   ctx.stroke();
   y += 6;
-  ctx.fillStyle = 'rgb(100,90,65)';
+  ctx.fillStyle = SKY_DK;
   ctx.font = `${FS(7.5)}px Helvetica, Arial, sans-serif`;
   ctx.textAlign = 'center';
   ctx.fillText('Track this shipment online: ' + buildTrackLink(s.id), px(W / 2), px(y));
@@ -1603,7 +1661,7 @@ async function generateInvoice(s) {
     ctx.translate(cx, cy);
     ctx.rotate(-14 * Math.PI / 180);
     ctx.globalAlpha = 0.85;
-    const INKCOLOR = 'rgb(148,26,34)';
+    const INKCOLOR = NAVY;
     ctx.strokeStyle = INKCOLOR;
     ctx.fillStyle = INKCOLOR;
     ctx.lineWidth = px(0.9);
@@ -1630,17 +1688,74 @@ async function generateInvoice(s) {
   ctx.restore();
   [[8,8],[W-8,8],[8,H-8],[W-8,H-8]].forEach(([fx,fy]) => drawFlourish(ctx, px(fx), px(fy), px(2.2), GOLD));
 
+  return canvas;
+}
+
+function downloadCanvasAsInvoice(canvas, shipmentId) {
   canvas.toBlob(blob => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'SwiftExpress-Invoice-' + s.id + '.jpg';
+    a.download = 'SwiftExpress-Invoice-' + shipmentId + '.jpg';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     showToast('Invoice downloaded ✓', 'success');
   }, 'image/jpeg', 0.94);
+}
+
+async function generateInvoice(s) {
+  showToast('Preparing invoice…', 'info');
+  try {
+    const canvas = await buildInvoiceCanvas(s);
+    downloadCanvasAsInvoice(canvas, s.id);
+  } catch (e) {
+    showToast('Failed to generate invoice.', 'error');
+  }
+}
+
+let currentPreviewCanvas = null;
+let currentPreviewId = null;
+
+async function showInvoicePreview(s) {
+  const overlay = document.getElementById('invoiceModalOverlay');
+  const body = document.getElementById('invoiceModalBody');
+  const sub = document.getElementById('invoiceModalSub');
+  currentPreviewCanvas = null;
+  currentPreviewId = s.id;
+  sub.textContent = 'Tracking ID · ' + s.id;
+  body.innerHTML = '<div class="invoice-modal-loading">Preparing invoice…</div>';
+  overlay.classList.add('show');
+  document.body.style.overflow = 'hidden';
+  try {
+    const canvas = await buildInvoiceCanvas(s);
+    currentPreviewCanvas = canvas;
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.94);
+    body.innerHTML = '';
+    const img = document.createElement('img');
+    img.src = dataUrl;
+    img.alt = 'Invoice for ' + s.id;
+    body.appendChild(img);
+  } catch (e) {
+    body.innerHTML = '<div class="invoice-modal-loading">Failed to generate invoice preview.</div>';
+    showToast('Failed to generate invoice preview.', 'error');
+  }
+}
+
+function closeInvoiceModal() {
+  document.getElementById('invoiceModalOverlay').classList.remove('show');
+  document.body.style.overflow = '';
+  currentPreviewCanvas = null;
+  currentPreviewId = null;
+}
+
+function downloadInvoiceFromModal() {
+  if (currentPreviewCanvas && currentPreviewId) {
+    downloadCanvasAsInvoice(currentPreviewCanvas, currentPreviewId);
+  } else {
+    showToast('Invoice still preparing…', 'info');
+  }
 }
 
 function esc(str) {
